@@ -1,4 +1,5 @@
-  macro_rules! init{
+```rust
+macro_rules! init{
    (@inner $d:tt)=>{
       let input=std::io::read_to_string(std::io::stdin()).unwrap();
       let mut iter=input.split_whitespace();
@@ -12,5 +13,5 @@
        }
     };
     ()=>{init!(@inner $)};
-   }
-   
+}
+```
