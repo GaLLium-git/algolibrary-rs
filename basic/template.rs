@@ -18,7 +18,7 @@ pub mod basic{
   #[macro_export]
   macro_rules! init{
    (@inner $d:tt)=>{
-      let input=std:io::read_to_string(std::io::stdin()).unwrap();
+      let input=std::io::read_to_string(std::io::stdin()).unwrap();
       let mut iter=input.split_whitespace();
       macro_rules! read{
        ($d t:ty) => {iter.next().unwrap().parse::<$d t>().unwrap()};
