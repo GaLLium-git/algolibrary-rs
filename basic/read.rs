@@ -1,4 +1,3 @@
-```rust
 macro_rules! init{
    (@inner $d:tt)=>{
       let input=std::io::read_to_string(std::io::stdin()).unwrap();
@@ -14,4 +13,3 @@ macro_rules! init{
     };
     ()=>{init!(@inner $)};
 }
-```
