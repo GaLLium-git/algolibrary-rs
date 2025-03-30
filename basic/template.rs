@@ -8,9 +8,9 @@ use ordered_float::*;
 
 fn main(){
   init!();
-  let a=read!(i64);
-  let b=read!(i64);
-  println!("{}",if a*b%2==1 {"Odd"}else{"Even"});
+  let (a,b)=read!(usize,usize);
+  let c=read!(usize;n);
+  println!("{}",a);
 }
 
 pub mod basic{
