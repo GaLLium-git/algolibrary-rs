@@ -8,9 +8,9 @@ use ordered_float::*;
 
 fn main(){
   init!();
-  let (a,b)=read!(usize,usize);
-  let c=read!(usize;n);
-  println!("{}",a);
+  let (n,k)=read!(usize,usize);
+  let a=read!(usize;n);
+  println!("{}",n);
 }
 
 pub mod basic{
