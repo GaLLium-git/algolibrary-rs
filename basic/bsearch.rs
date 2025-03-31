@@ -17,7 +17,7 @@ pub mod bsearch{
           if f(&self[mid]) {right = mid;}
           else {left = mid+1;}
         }
-        right
+        left
       }  
     }
    
