@@ -1,10 +1,11 @@
+pub mod bsearch{
   //bsearch
-pub trait BinarySearch<T> {
+  pub trait BinarySearch<T> {
     fn bsearch<F>(&self, f: F) -> usize
     where
         F: Fn(&T) -> bool;
   }
-impl<T> BinarySearch<T> for Vec<T>{
+  impl<T> BinarySearch<T> for Vec<T>{
      fn bsearch<F>(&self, f: F) -> usize
      where
         F: Fn(&T) -> bool, 
@@ -21,7 +22,7 @@ impl<T> BinarySearch<T> for Vec<T>{
     }
    
   //bsearch_range
-pub trait BinarySearchRange<T>
+  pub trait BinarySearchRange<T>
     where
       T:From<u8>+PartialOrd
           +std::ops::Add<Output=T>
@@ -34,7 +35,7 @@ pub trait BinarySearchRange<T>
         F: Fn(&T) -> bool;
     }
 
-impl<T> BinarySearchRange<T> for std::ops::Range<T>
+  impl<T> BinarySearchRange<T> for std::ops::Range<T>
   where
       T:From<u8>+PartialOrd+Copy
           +std::ops::Add<Output=T>
@@ -56,3 +57,4 @@ impl<T> BinarySearchRange<T> for std::ops::Range<T>
         right
       }
      }
+}
