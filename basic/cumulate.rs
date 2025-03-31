@@ -38,6 +38,7 @@ impl<T> Cumulate<T> for Vec<T>
           accum=f(accum,self[i]);
           cumvec.push(accum);
         }
+        cumvec.reverse();
         cumvec
       }  
     }
