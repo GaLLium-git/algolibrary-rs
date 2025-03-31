@@ -1,5 +1,6 @@
- //cumulate,cumlate_rev
-pub trait Cumulate<T> 
+pub mod cumulate{
+//cumulate,cumlate_rev
+  pub trait Cumulate<T> 
     where
       T:Copy,
     {
@@ -10,7 +11,7 @@ pub trait Cumulate<T>
      where
         F: Fn(T,T) -> T;
     }
-impl<T> Cumulate<T> for Vec<T>
+  impl<T> Cumulate<T> for Vec<T>
     where
       T:Copy,
     {
@@ -44,7 +45,7 @@ impl<T> Cumulate<T> for Vec<T>
     }
     
   //cumlate_2d
-pub trait Cumulate2D<T> 
+  pub trait Cumulate2D<T> 
     where
       T:Copy,
     {
@@ -52,7 +53,7 @@ pub trait Cumulate2D<T>
     where
         F: Fn(T,T) -> T;
     }
-impl<T> Cumulate2D<T> for Vec<Vec<T>>
+  impl<T> Cumulate2D<T> for Vec<Vec<T>>
     where
       T:Copy,
     {
@@ -77,3 +78,4 @@ impl<T> Cumulate2D<T> for Vec<Vec<T>>
         cumvec
       }  
     }
+}
