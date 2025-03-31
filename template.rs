@@ -158,6 +158,7 @@ pub mod basic{
           accum=f(accum,self[i]);
           cumvec.push(accum);
         }
+        cumvec.reverse();
         cumvec
       }  
     }
