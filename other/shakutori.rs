@@ -11,7 +11,7 @@ fn main() {
             shaku[i]+=1;
         }
     }
-    println!("{:?}",shaku);
+    //println!("{:?}",shaku);
     let mut ans=0;
     for i in 1..=n{
         ans+=shaku[i]-i;
