@@ -39,7 +39,6 @@ pub mod basic {
         T: Default + Copy,
     {
         fn shift(&mut self);
-        fn shifted(&mut self)->Vec<T>;
     }
     impl<T> Shift<T> for Vec<T>
     where
@@ -47,10 +46,6 @@ pub mod basic {
     {
         fn shift(&mut self) {
             self.insert(0, T::default());
-        }
-        fn shifted(&mut self)->Vec<T>{
-            self.shift();
-            self.to_vec()
         }
     }
     
@@ -60,9 +55,7 @@ pub mod basic {
         T: Default + Copy,
     {   
         fn shift(&mut self);
-        fn shifted(&mut self)->Vec<Vec<T>>;
         fn shift_2d(&mut self);
-        fn shifted_2d(&mut self)->Vec<Vec<T>>;
     }
     impl<T> Shift2D<T> for Vec<Vec<T>>
     where
@@ -71,19 +64,11 @@ pub mod basic {
          fn shift(&mut self) {
             self.insert(0, vec![T::default();self[0].len()]);
         }
-        fn shifted(&mut self)-> Vec<Vec<T>>{
-           self.shift();
-           self.to_vec()
-        }
         fn shift_2d(&mut self) {
             for i in 0..self.len() {
                 self[i].shift();
             }
             self.shift();
-        }
-        fn shifted_2d(&mut self)->Vec<Vec<T>>{
-            self.shift_2d();
-            self.to_vec()
         }
     }
 
@@ -246,4 +231,3 @@ pub mod basic {
         }
     }
 }
-
