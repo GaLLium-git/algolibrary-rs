@@ -1,2 +1,4 @@
-# algotools-rs
-Rustの競技プログラミングのコードを置いておく。
+# algolibrary-rs
+競技プログラミングのコードを置く
+
+
