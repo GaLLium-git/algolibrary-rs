@@ -1,7 +1,8 @@
 fn main() {
 　　init!();
     let (n, s) = read!(usize, usize);
-    let a = read!(usize;n).shifted();
+    let mut a = read!(usize;n);
+    a.shift();
     let mut dp=vec![vec![false;s+1];n+1];
     dp[0][0]=true;
     for i in 1..=n{
