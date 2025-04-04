@@ -14,7 +14,6 @@ fn main() {
     println!("{}",ans);
 }
 
-
 pub mod basic {
     //read! macro
     #[macro_export]
@@ -34,30 +33,57 @@ pub mod basic {
     ()=>{init!(@inner $)};
    }
 
-    //to_1indexed
-    pub trait To1Index<T>
+    //Shift vec
+    pub trait Shift<T>
     where
         T: Default + Copy,
     {
-        fn to_1index(&mut self);
+        fn shift(&mut self);
+        fn shifted(&mut self)->Vec<T>;
     }
-    impl<T> To1Index<T> for Vec<T>
+    impl<T> Shift<T> for Vec<T>
     where
         T: Default + Copy,
     {
-        fn to_1index(&mut self) {
+        fn shift(&mut self) {
             self.insert(0, T::default());
         }
+        fn shifted(&mut self)->Vec<T>{
+            self.shift();
+            self.to_vec()
+        }
     }
-    impl<T> To1Index<T> for Vec<Vec<T>>
+    
+   
+    pub trait Shift2D<T>
+    where
+        T: Default + Copy,
+    {   
+        fn shift(&mut self);
+        fn shifted(&mut self)->Vec<Vec<T>>;
+        fn shift_2d(&mut self);
+        fn shifted_2d(&mut self)->Vec<Vec<T>>;
+    }
+    impl<T> Shift2D<T> for Vec<Vec<T>>
     where
         T: Default + Copy,
     {
-        fn to_1index(&mut self) {
+         fn shift(&mut self) {
+            self.insert(0, vec![T::default();self[0].len()]);
+        }
+        fn shifted(&mut self)-> Vec<Vec<T>>{
+           self.shift();
+           self.to_vec()
+        }
+        fn shift_2d(&mut self) {
             for i in 0..self.len() {
-                self[i].insert(0, T::default());
+                self[i].shift();
             }
-            self.insert(0, vec![T::default(); self[1].len()]);
+            self.shift();
+        }
+        fn shifted_2d(&mut self)->Vec<Vec<T>>{
+            self.shift_2d();
+            self.to_vec()
         }
     }
 
@@ -220,3 +246,4 @@ pub mod basic {
         }
     }
 }
+
