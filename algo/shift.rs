@@ -1,3 +1,9 @@
+fn main(){
+    let mut v=vec![1,2,3,4,5];
+    v.shift();
+    println!("{:?}",v);
+}
+
 pub trait Shift<T>
     where
         T: Default + Copy,
