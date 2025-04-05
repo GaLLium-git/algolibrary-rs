@@ -1,7 +1,7 @@
 fn main(){
     let mut v=vec![1,2,3,4,5];
     v.shift();
-    println!("{:?}",v);
+    println!("{:?}",v);  //[0,1,2,3,4,5]
 }
 
 pub trait Shift<T>
