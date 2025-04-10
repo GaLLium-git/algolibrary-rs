@@ -1,6 +1,10 @@
-pub mod cumulate{
-//cumulate,cumlate_rev
-  pub trait Cumulate<T> 
+fn main(){
+  let v=vec![1,2,3,3,4,5];
+  let cumv=v.cumulate(std::ops::Add::add);
+  println!("{:?}",cumv); //[1,3,6,9,13,18]
+}
+ //cumulate,cumlate_rev
+pub trait Cumulate<T> 
     where
       T:Copy,
     {
@@ -11,7 +15,7 @@ pub mod cumulate{
      where
         F: Fn(T,T) -> T;
     }
-  impl<T> Cumulate<T> for Vec<T>
+impl<T> Cumulate<T> for Vec<T>
     where
       T:Copy,
     {
@@ -45,7 +49,7 @@ pub mod cumulate{
     }
     
   //cumlate_2d
-  pub trait Cumulate2D<T> 
+pub trait Cumulate2D<T> 
     where
       T:Copy,
     {
@@ -53,7 +57,7 @@ pub mod cumulate{
     where
         F: Fn(T,T) -> T;
     }
-  impl<T> Cumulate2D<T> for Vec<Vec<T>>
+impl<T> Cumulate2D<T> for Vec<Vec<T>>
     where
       T:Copy,
     {
@@ -78,4 +82,3 @@ pub mod cumulate{
         cumvec
       }  
     }
-}
