@@ -73,4 +73,4 @@ impl<S:std::ops::RangeBounds<T>,T> BinarySearchRange<T> for S
         left
       }
     }
-}
+
