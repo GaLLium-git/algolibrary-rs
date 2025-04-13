@@ -8,5 +8,11 @@ pub mod numbertheory{
     v.reverse();
     v
    }
-  
+  pub fn gcd(n:usize,m:usize)->usize{
+    if m==0 {
+        n
+    } else{
+        gcd(m,n%m)
+    }
+  }
 }
