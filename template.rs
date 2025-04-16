@@ -1,46 +1,44 @@
 #![allow(unused)]
 #![allow(non_snake_case)]
 #![allow(dead_code)]
-use basic::*;
+use library::*;
 use itertools::*;
 use ordered_float::*;
 use std::collections::*;
 
+macro_rules! init{
+    (@inner $d:tt)=>{
+        let input=std::io::read_to_string(std::io::stdin()).unwrap();
+        let mut iter=input.split_whitespace();
+        macro_rules! read{
+            ($d t:ty) => {iter.next().unwrap().parse::<$d t>().unwrap()};
+            ($d ($d t:ty),*) => {{ ($d (iter.next().unwrap().parse::<$d t>().unwrap(),)*)}};
+            ($d t:ty; $d n:expr) => {(0..$d n).map(|_|read!($d t) ).collect::<Vec<_>>()};
+            ($d ($d t:ty),*; $d n:expr) => {(0..$d n).map(|_|read!($dol ($d t),*)).collect::<Vec<_>>()};
+            ($d t:ty; $d n:expr; $d m:expr) => {(0..$d m).map(|_|read!($d t; $d n)).collect::<Vec<_>>()};
+            ($d ($d t:ty),*; $d n:expr; $d m:expr) => {(0..$d m).map(|_|read!($d ($d t),*; $d n)).collect::<Vec<_>>()};
+        }
+    };
+    ()=>{init!(@inner $)};
+}
+
 fn main() {
     init!();
-    let (n, k) = read!(usize, usize);
-    let a = read!(usize;n);
-    let ans = 0;
+    let (a,b) = read!(usize, usize);
+    let ans = if a*b%2==0 {"Even"} else {"Odd"};
     println!("{}",ans);
 }
 
-pub mod basic {
-    //read! macro
-    #[macro_export]
-    macro_rules! init{
-   (@inner $d:tt)=>{
-      let input=std::io::read_to_string(std::io::stdin()).unwrap();
-      let mut iter=input.split_whitespace();
-      macro_rules! read{
-       ($d t:ty) => {iter.next().unwrap().parse::<$d t>().unwrap()};
-       ($d ($d t:ty),*) => {{ ($d (iter.next().unwrap().parse::<$d t>().unwrap(),)*)}};
-       ($d t:ty; $d n:expr) => {(0..$d n).map(|_|read!($d t) ).collect::<Vec<_>>()};
-       ($d ($d t:ty),*; $d n:expr) => {(0..$d n).map(|_|read!($dol ($d t),*)).collect::<Vec<_>>()};
-       ($d t:ty; $d n:expr; $d m:expr) => {(0..$d m).map(|_|read!($d t; $d n)).collect::<Vec<_>>()};
-       ($d ($d t:ty),*; $d n:expr; $d m:expr) => {(0..$d m).map(|_|read!($d ($d t),*; $d n)).collect::<Vec<_>>()};
-       }
-    };
-    ()=>{init!(@inner $)};
-   }
+pub mod library {
 
-    //Shift vec
-    pub trait Shift<T>
+//Shift vec
+pub trait Shift<T>
     where
         T: Default + Copy,
     {
         fn shift(&mut self);
     }
-    impl<T> Shift<T> for Vec<T>
+impl<T> Shift<T> for Vec<T>
     where
         T: Default + Copy,
     {
@@ -50,14 +48,14 @@ pub mod basic {
     }
     
    
-    pub trait Shift2D<T>
+pub trait Shift2D<T>
     where
         T: Default + Copy,
     {   
         fn shift(&mut self);
         fn shift_2d(&mut self);
     }
-    impl<T> Shift2D<T> for Vec<Vec<T>>
+impl<T> Shift2D<T> for Vec<Vec<T>>
     where
         T: Default + Copy,
     {
@@ -72,14 +70,14 @@ pub mod basic {
         }
     }
 
-    //bsearch
-    pub trait BinarySearch<T> {
+//bsearch
+pub trait BinarySearch<T> {
         fn bsearch<F>(&self, f: F) -> usize
         where
             F: Fn(&T) -> bool;
-    }
-    impl<T> BinarySearch<T> for Vec<T> {
-        fn bsearch<F>(&self, f: F) -> usize
+}
+impl<T> BinarySearch<T> for Vec<T> {
+    fn bsearch<F>(&self, f: F) -> usize
         where
             F: Fn(&T) -> bool,
         {
@@ -95,10 +93,10 @@ pub mod basic {
             }
             left
         }
-    }
+ }
 
-    //bsearch_range
-    pub trait BinarySearchRange<T>
+//bsearch_range
+pub trait BinarySearchRange<T>
     where
         T: From<u8>
             + PartialOrd
@@ -113,7 +111,7 @@ pub mod basic {
             F: Fn(&T) -> bool;
     }
 
-    impl<S: std::ops::RangeBounds<T>, T> BinarySearchRange<T> for S
+impl<S: std::ops::RangeBounds<T>, T> BinarySearchRange<T> for S
     where
         T: From<u8>
             + PartialOrd
@@ -151,8 +149,8 @@ pub mod basic {
         }
     }
 
-    // cumulate,cumlate_rev
-    pub trait Cumulate<T>
+// cumulate,cumlate_rev
+pub trait Cumulate<T>
     where
         T: Copy,
     {
@@ -163,7 +161,7 @@ pub mod basic {
         where
             F: Fn(T, T) -> T;
     }
-    impl<T> Cumulate<T> for Vec<T>
+impl<T> Cumulate<T> for Vec<T>
     where
         T: Copy,
     {
@@ -196,8 +194,8 @@ pub mod basic {
         }
     }
 
-    //cumlate_2d
-    pub trait Cumulate2D<T>
+//cumlate_2d
+pub trait Cumulate2D<T>
     where
         T: Copy,
     {
@@ -205,7 +203,7 @@ pub mod basic {
         where
             F: Fn(T, T) -> T;
     }
-    impl<T> Cumulate2D<T> for Vec<Vec<T>>
+impl<T> Cumulate2D<T> for Vec<Vec<T>>
     where
         T: Copy,
     {
@@ -230,4 +228,5 @@ pub mod basic {
             cumvec
         }
     }
+    
 }
