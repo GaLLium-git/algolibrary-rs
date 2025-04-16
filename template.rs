@@ -29,6 +29,8 @@ fn main() {
     println!("{}",ans);
 }
 
+
+
 pub mod library {
 
 //Shift vec
