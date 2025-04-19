@@ -25,9 +25,9 @@ fn main() {
     for i in 0..q{
       let query=read!(usize);
       match query {
-        1 =>{queue.push_back(read!(String))},  //frontの返り値はOption<&T> 
-        2 =>{println!("{}",*queue.front().unwrap());},  //pop_frontの返り値はOption<T>
-        3 =>{queue.pop_front();},
+        1 =>{queue.push_back(read!(String))},  
+        2 =>{println!("{}",*queue.front().unwrap());},  //frontの返り値はOption<&T> 
+        3 =>{queue.pop_front();},  //pop_frontの返り値はOption<T>
         _ =>{},
       }
     }
