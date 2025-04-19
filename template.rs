@@ -151,84 +151,74 @@ impl<S: std::ops::RangeBounds<T>, T> BinarySearchRange<T> for S
         }
     }
 
-// cumulate,cumlate_rev
-pub trait Cumulate<T>
+ //cumulate,cumlate_rev
+pub trait Cumulate<T> 
     where
-        T: Copy,
+      T:Clone,
     {
-        fn cumulate<F>(&self, f: F) -> Vec<T>
-        where
-            F: Fn(T, T) -> T;
-        fn cumulate_rev<F>(&self, f: F) -> Vec<T>
-        where
-            F: Fn(T, T) -> T;
+    fn cumulate<F>(&self, f: F) -> Vec<T>
+    where
+        F: Fn(&T,&T) -> T;
+     fn cumulate_rev<F>(&self, f: F) -> Vec<T>
+     where
+        F: Fn(&T,&T) -> T;
     }
 impl<T> Cumulate<T> for Vec<T>
     where
-        T: Copy,
+      T:Clone,
     {
-        fn cumulate<F>(&self, f: F) -> Vec<T>
-        where
-            F: Fn(T, T) -> T,
-        {
-            let mut cumvec: Vec<T> = Vec::new();
-            let mut accum = self[0];
-            cumvec.push(accum);
-            for i in 1..self.len() {
-                accum = f(accum, self[i]);
-                cumvec.push(accum);
-            }
-            cumvec
+     fn cumulate<F>(&self, f: F) ->Vec<T>
+     where
+        F: Fn(&T,&T) ->T, 
+      {
+        let mut cumvec= self.clone();
+        for i in 1..self.len() {
+          cumvec[i]=f(&cumvec[i-1],&self[i]);
         }
-        fn cumulate_rev<F>(&self, f: F) -> Vec<T>
-        where
-            F: Fn(T, T) -> T,
-        {
-            let mut cumvec: Vec<T> = Vec::new();
-            let mut accum = self[self.len() - 1];
-            cumvec.push(accum);
-            for i in (0..self.len() - 1).rev() {
-                accum = f(accum, self[i]);
-                cumvec.push(accum);
-            }
-            cumvec.reverse();
-            cumvec
+        cumvec
+      }  
+     fn cumulate_rev<F>(&self, f: F) ->Vec<T>
+     where
+        F: Fn(&T,&T) ->T, 
+      {
+        let mut cumvec = self.clone();
+        for i in (0..self.len()-1).rev() {
+          cumvec[i]=f(&cumvec[i+1],&self[i]);
         }
+        cumvec
+      }
     }
-
-//cumlate_2d
-pub trait Cumulate2D<T>
+    
+  //cumlate_2d
+pub trait Cumulate2D<T> 
     where
-        T: Copy,
+      T:Clone,
     {
-        fn cumulate_2d<F>(&self, f: F) -> Vec<Vec<T>>
-        where
-            F: Fn(T, T) -> T;
+    fn cumulate_2d<F>(&self, f: F) -> Vec<Vec<T>>
+    where
+        F: Fn(&T,&T) -> T;
     }
 impl<T> Cumulate2D<T> for Vec<Vec<T>>
     where
-        T: Copy,
+      T:Clone,
     {
-        fn cumulate_2d<F>(&self, f: F) -> Vec<Vec<T>>
-        where
-            F: Fn(T, T) -> T,
-        {
-            let mut cumvec: Vec<Vec<T>> = Vec::new();
-            for i in 0..self.len() {
-                cumvec.push(self[i].clone());
-            }
-            for i in 0..self.len() {
-                for j in 1..self[i].len() {
-                    cumvec[i][j] = f(cumvec[i][j], cumvec[i][j - 1]);
-                }
-            }
-            for i in 1..self.len() {
-                for j in 0..self[i].len() {
-                    cumvec[i][j] = f(cumvec[i][j], cumvec[i - 1][j]);
-                }
-            }
-            cumvec
+     fn cumulate_2d<F>(&self, f: F) ->Vec<Vec<T>>
+     where
+        F: Fn(&T,&T) ->T, 
+      {
+        let mut cumvec = self.clone();
+        for i in 0..self.len() {
+          for j in 1..self[i].len(){
+            cumvec[i][j]=f(&cumvec[i][j],&cumvec[i][j-1]);
+          }
         }
+        for i in 1..self.len() {
+          for j in 0..self[i].len(){
+            cumvec[i][j]=f(&cumvec[i][j],&cumvec[i-1][j]);
+          }
+        }
+        cumvec
+      }  
     }
     
 }
