@@ -1,10 +1,12 @@
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ModInt {
     value: usize,
 }
 
-impl ModInt {
-    pub static MOD: std::cell::OnceCell<usize> = std::cell::OnceCell::new();
+pub static MOD: std::sync::OnceLock<usize> = std::sync::OnceLock::new();
 
+impl ModInt {
+    
     pub fn set_modulus(modulus: usize) {
         MOD.set(modulus).unwrap_or_else(|_| panic!("Modulus can be set only once"));
     }
@@ -21,9 +23,7 @@ impl ModInt {
     }
 
     pub fn inv(self) -> Self {
-        let modulus = Self::modulus();
-        let inv_value = self.extended_gcd(self.value, modulus).0;
-        ModInt::new(inv_value)
+        self.pow(Self::modulus()-2)
     }
 
     pub fn pow(self, exp: usize) -> Self {
@@ -43,14 +43,7 @@ impl ModInt {
         ModInt::new(result)
     }
 
-    fn extended_gcd(&self, a: usize, b: usize) -> (usize, usize, usize) {
-        if b == 0 {
-            (a, 1, 0)
-        } else {
-            let (g, x, y) = self.extended_gcd(b, a % b);
-            (g, y, x - (a / b) * y)
-        }
-    }
+    
 }
 
 impl std::ops::Add for ModInt {
@@ -116,3 +109,4 @@ impl std::ops::DivAssign for ModInt {
         self.value = (self.value * rhs.inv().value) % modulus;
     }
 }
+
