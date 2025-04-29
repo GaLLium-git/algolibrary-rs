@@ -1,3 +1,34 @@
+fn main() {
+    ModInt::set_modulus(10);
+   
+    let a = ModInt::new(7);
+    let b = ModInt::new(3);
+
+    println!("a = {}", a);         // 7
+    println!("b = {}", b);         // 3
+    println!("a + b = {}", a + b); // 0
+    println!("a - b = {}", a - b); // 4
+    println!("a * b = {}", a * b); // 1
+    println!("a / b = {}", a / b); // 9 (7 * inv(3) = 7 * 7 = 49 % 10 = 9)
+
+    println!("a.pow(3) = {}", a.pow(3)); // 343 % 10 = 3
+
+    println!("b.inv() = {}", b.inv());     // 7
+    println!("b * b.inv() = {}", b * b.inv()); // 1
+
+ 
+    let c = ModInt::new(-14);
+    let d = ModInt::new(29u32);
+    println!("c  = {}", c); // 6
+    println!("d = {}", d); // 9
+
+    let e: ModInt = "23".parse().unwrap();
+    println!("e  = {}", e); // 3
+
+}
+
+
+//ModInt
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ModInt {
     val: usize,
@@ -6,7 +37,6 @@ pub struct ModInt {
 pub static MOD: std::sync::OnceLock<usize> = std::sync::OnceLock::new();
 
 impl ModInt {
-    
     pub fn set_modulus(modulus: usize) {
         MOD.set(modulus).unwrap_or_else(|_| panic!("Modulus can be set only once"));
     }
@@ -15,15 +45,31 @@ impl ModInt {
         *MOD.get().expect("Modulus is not set")
     }
 
-    pub fn new(value: usize) -> Self {
+    pub fn new<T>(value: T) -> Self
+    where
+         T: TryInto<i64, Error: std::fmt::Debug>
+    {
         let modulus = Self::modulus();
         ModInt {
-            val: value % modulus,
+            val: value.try_into().unwrap().rem_euclid(modulus as i64) as usize,
         }
     }
 
     pub fn inv(self) -> Self {
-        self.pow(Self::modulus() - 2)
+        let m = Self::modulus() as i64;
+        let a = self.val as i64;
+        let (g, x, _) = Self::extended_gcd(a, m);
+        assert!(g == 1, "Inverse does not exist as GCD ≠ 1");
+        ModInt::new((x.rem_euclid(m)) as usize)
+    }
+
+    fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64) {
+        if b == 0 {
+            (a, 1, 0)
+        } else {
+            let (g, x, y) = Self::extended_gcd(b, a % b);
+            (g, y, x - (a / b) * y)
+        }
     }
 
     pub fn pow(self, exp: usize) -> Self {
@@ -122,5 +168,3 @@ impl std::str::FromStr for ModInt {
         std::result::Result::Ok(ModInt::new(parsed_val))
     }
 }
-
-
