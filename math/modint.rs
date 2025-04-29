@@ -47,7 +47,8 @@ impl ModInt {
 
     pub fn new<T>(value: T) -> Self
     where
-         T: TryInto<i64, Error: std::fmt::Debug>
+         T: TryInto<i64>,
+         <T as TryInto<i64>>::Error: std::fmt::Debug,
     {
         let modulus = Self::modulus();
         ModInt {
