@@ -2,12 +2,13 @@ fn main(){
     \\nothing here..
 }
 
-pub fn digits(mut n:usize,base:usize)->Vec<usize>{
+pub fn digits(n:usize,base:usize,limit:usize)->Vec<usize>{
     let mut v=Vec::new();
-    while n>0{
-        v.push(n%base);
-        n/=base;
-     }
+    let mut div=1;
+    for _ in 0..limit{
+        v.push((n/div)%base);
+        div*=base;
+    }
     v.reverse();
     v
 }
