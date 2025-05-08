@@ -1,5 +1,5 @@
 fn main(){
-  \\hogehoge
+  //hogehoge
 }
 
 pub struct SegmentTree<T, F>
