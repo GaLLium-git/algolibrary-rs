@@ -1,3 +1,23 @@
+fn main() {
+    init!();
+    let (n,q)=read!(usize,usize);
+    let mut uf=UnionFind::new(n+1);
+    for _ in 0..q{
+        let query=read!(usize);
+        match query{
+            1=>{
+                let (u,v)=read!(usize,usize);
+                uf.union(u,v);
+            },
+            2=>{
+                let (u,v)=read!(usize,usize);
+                println!("{}",if uf.same(u,v) {"Yes"} else {"No"});
+            },
+            _=>unreachable!(),
+        }
+    }
+}
+
 pub struct UnionFind {
     pub parent: Vec<usize>,
     pub size: Vec<usize>,
