@@ -1,6 +1,25 @@
-fn main(){
-  //hogehoge
+fn main() {
+    let op = |a: &i64, b: &i64| a + b;
+    let id = 0i64;
+    let mut seg = SegmentTree::new(8, op, id);
+
+    for i in 0..8 {
+        seg.update(i, i as i64);
+    }
+
+    let val = seg.get(3);
+    println!("get(3) = {}", val); // 3
+
+    let r = seg.max_right(2, |x| *x <= 10);
+    println!("max_right(2, <=10) = {}", r); // 4
+
+    let l = seg.min_left(5, |x| *x < 8);
+    println!("min_left(5, <8) = {}", l); // 3
+
+    let q = seg.query(2, 6);
+    println!("query(2,6) = {}", q); // 14
 }
+
 
 pub struct SegmentTree<T, F>
 where
@@ -34,7 +53,7 @@ where
     }
 
     pub fn update(&mut self, mut i: usize, value: T) {
-        i += self.n - 1;
+        i += self.n;
         self.data[i] = value;
         while i > 1 {
             i >>= 1;
@@ -42,23 +61,95 @@ where
         }
     }
 
+    pub fn get(&self, i: usize) -> T {
+        self.data[i + self.n].clone()
+    }
+
     pub fn query(&self, mut l: usize, mut r: usize) -> T {
-        l += self.n - 1;
-        r += self.n - 1;
-        let mut res_left = self.id.clone();
-        let mut res_right = self.id.clone();
+        l += self.n;
+        r += self.n;
+        let mut sml = self.id.clone();
+        let mut smr = self.id.clone();
         while l < r {
             if l & 1 == 1 {
-                res_left = (self.op)(&res_left, &self.data[l]);
+                sml = (self.op)(&sml, &self.data[l]);
                 l += 1;
             }
             if r & 1 == 1 {
                 r -= 1;
-                res_right = (self.op)(&self.data[r], &res_right);
+                smr = (self.op)(&self.data[r], &smr);
             }
             l >>= 1;
             r >>= 1;
         }
-        (self.op)(&res_left, &res_right)
+        (self.op)(&sml, &smr)
+    }
+
+    pub fn max_right<G>(&self, mut l: usize, f: G) -> usize
+    where
+        G: Fn(&T) -> bool,
+    {
+        if l == self.size {
+            return self.size;
+        }
+        l += self.n;
+        let mut sm = self.id.clone();
+        loop {
+            while l % 2 == 0 {
+                l >>= 1;
+            }
+            let next = (self.op)(&sm, &self.data[l]);
+            if !f(&next) {
+                while l < self.n {
+                    l <<= 1;
+                    let t = (self.op)(&sm, &self.data[l]);
+                    if f(&t) {
+                        sm = t;
+                        l += 1;
+                    }
+                }
+                return l - self.n;
+            }
+            sm = next;
+            l += 1;
+            if (l & (l - 1)) == 0 {
+                break;
+            }
+        }
+        self.size
+    }
+
+    pub fn min_left<G>(&self, r: usize, f: G) -> usize
+    where
+        G: Fn(&T) -> bool,
+    {
+        if r == 0 {
+            return 0;
+        }
+        let mut r = r + self.n;
+        let mut sm = self.id.clone();
+        loop {
+            r -= 1;
+            while r > 1 && r % 2 == 1 {
+                r >>= 1;
+            }
+            let next = (self.op)(&self.data[r], &sm);
+            if !f(&next) {
+                while r < self.n {
+                    r = 2 * r + 1;
+                    let t = (self.op)(&self.data[r], &sm);
+                    if f(&t) {
+                        sm = t;
+                        r -= 1;
+                    }
+                }
+                return r + 1 - self.n;
+            }
+            sm = next;
+            if (r & (r - 1)) == 0 {
+                break;
+            }
+        }
+        0
     }
 }
