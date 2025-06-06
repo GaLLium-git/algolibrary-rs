@@ -6,7 +6,7 @@ macro_rules! init{
        ($d t:ty) => {iter.next().unwrap().parse::<$d t>().unwrap()};
        ($d ($d t:ty),*) => {{ ($d (iter.next().unwrap().parse::<$d t>().unwrap(),)*)}};
        ($d t:ty; $d n:expr) => {(0..$d n).map(|_|read!($d t) ).collect::<Vec<_>>()};
-       ($d ($d t:ty),*; $d n:expr) => {(0..$d n).map(|_|read!($dol ($d t),*)).collect::<Vec<_>>()};
+       ($d ($d t:ty),*; $d n:expr) => {(0..$d n).map(|_|read!($d ($d t),*)).collect::<Vec<_>>()};
        ($d t:ty; $d n:expr; $d m:expr) => {(0..$d m).map(|_|read!($d t; $d n)).collect::<Vec<_>>()};
        ($d ($d t:ty),*; $d n:expr; $d m:expr) => {(0..$d m).map(|_|read!($d ($d t),*; $d n)).collect::<Vec<_>>()};
        }
