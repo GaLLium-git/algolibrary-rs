@@ -22,8 +22,7 @@ fn main() {
         }
         
         kakutei[pos]=true;
-        for &nc in graph[pos].iter(){
-            let (nex,cost)=nc;
+        for &(nex,cost) in graph[pos].iter(){
             cur[nex]=cur[nex].min(cur[pos]+cost);
             pq.push(Reverse((cur[nex],nex)));
             
