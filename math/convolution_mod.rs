@@ -31,7 +31,7 @@ fn bit_reverse(a: &mut [u64]) {
     }
 }
 
-fn ntt(a: &mut [u64], modp: u64, root: u64) {
+pub fn ntt(a: &mut [u64], modp: u64, root: u64) {
     let n = a.len();
     bit_reverse(a);
     let mut len = 2;
@@ -51,7 +51,7 @@ fn ntt(a: &mut [u64], modp: u64, root: u64) {
     }
 }
 
-fn intt(a: &mut [u64], modp: u64, root: u64) {
+pub fn intt(a: &mut [u64], modp: u64, root: u64) {
     let n = a.len();
     bit_reverse(a);
     let mut len = 2;
@@ -75,7 +75,7 @@ fn intt(a: &mut [u64], modp: u64, root: u64) {
     }
 }
 
-fn convolution_mod_core(a: &[u64], b: &[u64], modp: u64, root: u64) -> Vec<u64> {
+pub fn convolution_mod_core(a: &[u64], b: &[u64], modp: u64, root: u64) -> Vec<u64> {
     let mut n = 1;
     while n < a.len() + b.len() - 1 {
         n <<= 1;
