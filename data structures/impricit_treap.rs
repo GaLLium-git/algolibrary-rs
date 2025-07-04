@@ -1,6 +1,21 @@
-use std::fmt::Debug;
+fn main() {
+    let mut treap = Treap::new(|&a, &b| a + b, 0);
 
-// ------------------------ Xorshift RNG ------------------------
+    treap.insert(10, 1);
+    treap.insert(20, 2);
+    treap.insert(15, 3);
+    treap.insert(25, 4);
+
+    println!("All sum: {}", treap.all_prod()); // 10
+
+    println!("prod(10, 20): {}", treap.prod(10, 20)); // 4 (1 + 3)
+    println!("prod(15, 30): {}", treap.prod(15, 30)); // 9 (3 + 2 + 4)
+
+    treap.update(15, 10); // 3 -> 10
+    println!("After update: prod(10,30): {}", treap.prod(10, 30)); // 1 + 10 + 2 + 4 = 17
+}
+
+
 pub struct XorShift32 {
     state: u32,
 }
@@ -20,9 +35,9 @@ impl XorShift32 {
     }
 }
 
-// ------------------------ Treap Node ------------------------
+
 #[derive(Debug)]
-struct Node<T: Clone + Debug> {
+struct Node<T: Clone + std::fmt::Debug> {
     key: i32,
     val: T,
     sum: T,
@@ -31,7 +46,7 @@ struct Node<T: Clone + Debug> {
     right: Option<Box<Node<T>>>,
 }
 
-impl<T: Clone + Debug> Node<T> {
+impl<T: Clone + std::fmt::Debug> Node<T> {
     fn new(key: i32, val: T, prio: u32, _op: fn(&T, &T) -> T) -> Box<Self> {
         let sum = val.clone();
         Box::new(Node {
@@ -170,14 +185,14 @@ impl<T: Clone + Debug> Node<T> {
 }
 
 // ------------------------ Treap 本体 ------------------------
-pub struct Treap<T: Clone + Debug> {
+pub struct Treap<T: Clone + std::fmt::Debug> {
     root: Option<Box<Node<T>>>,
     rng: XorShift32,
     op: fn(&T, &T) -> T,
     e: T,
 }
 
-impl<T: Clone + Debug> Treap<T> {
+impl<T: Clone + std::fmt::Debug> Treap<T> {
     pub fn new(op: fn(&T, &T) -> T, e: T) -> Self {
         Treap {
             root: None,
@@ -200,7 +215,7 @@ impl<T: Clone + Debug> Treap<T> {
         self.insert(key, val);
     }
 
-    // splitして区間の集約値を返し、元に戻す
+    
     pub fn prod(&mut self, l: i32, r: i32) -> T {
         let (t1, t2) = Node::split(self.root.take(), l, self.op, &self.e);
         let (t21, t22) = Node::split(t2, r, self.op, &self.e);
@@ -218,20 +233,3 @@ impl<T: Clone + Debug> Treap<T> {
     }
 }
 
-// ------------------------ Main ------------------------
-fn main() {
-    let mut treap = Treap::new(|&a, &b| a + b, 0);
-
-    treap.insert(10, 1);
-    treap.insert(20, 2);
-    treap.insert(15, 3);
-    treap.insert(25, 4);
-
-    println!("All sum: {}", treap.all_prod()); // 10
-
-    println!("prod(10, 20): {}", treap.prod(10, 20)); // 4 (1 + 3)
-    println!("prod(15, 30): {}", treap.prod(15, 30)); // 9 (3 + 2 + 4)
-
-    treap.update(15, 10); // 3 -> 10
-    println!("After update: prod(10,30): {}", treap.prod(10, 30)); // 1 + 10 + 2 + 4 = 17
-}
