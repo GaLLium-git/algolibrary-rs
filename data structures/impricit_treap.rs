@@ -1,131 +1,6 @@
-#[derive(Debug)]
-struct Node {
-    key: i32,
-    val: i32,
-    prio: u32,
-    left: Option<Box<Node>>,
-    right: Option<Box<Node>>,
-}
+use std::fmt::Debug;
 
-impl Node {
-    fn new(key: i32, val: i32, prio: u32) -> Box<Self> {
-        Box::new(Node {
-            key,
-            val,
-            prio,
-            left: None,
-            right: None,
-        })
-    }
-
-    fn insert(node: Option<Box<Node>>, key: i32, val: i32, rng: &mut XorShift32) -> Option<Box<Node>> {
-        match node {
-            None => Some(Node::new(key, val, rng.next())),
-            Some(mut n) => {
-                if key < n.key {
-                    n.left = Node::insert(n.left.take(), key, val, rng);
-                    if n.left.as_ref().unwrap().prio > n.prio {
-                        return Some(Self::rotate_right(n));
-                    }
-                } else {
-                    n.right = Node::insert(n.right.take(), key, val, rng);
-                    if n.right.as_ref().unwrap().prio > n.prio {
-                        return Some(Self::rotate_left(n));
-                    }
-                }
-                Some(n)
-            }
-        }
-    }
-
-    fn erase_all(node: Option<Box<Node>>, key: i32) -> Option<Box<Node>> {
-        match node {
-            None => None,
-            Some(mut n) => {
-                n.left = Self::erase_all(n.left.take(), key);
-                n.right = Self::erase_all(n.right.take(), key);
-
-                if n.key == key {
-                    return Self::merge(n.left.take(), n.right.take());
-                }
-                Some(n)
-            }
-        }
-    }
-
-    fn merge(a: Option<Box<Node>>, b: Option<Box<Node>>) -> Option<Box<Node>> {
-        match (a, b) {
-            (None, r) => r,
-            (l, None) => l,
-            (Some(mut lnode), Some(mut rnode)) => {
-                if lnode.prio > rnode.prio {
-                    lnode.right = Self::merge(lnode.right.take(), Some(rnode));
-                    Some(lnode)
-                } else {
-                    rnode.left = Self::merge(Some(lnode), rnode.left.take());
-                    Some(rnode)
-                }
-            }
-        }
-    }
-
-    fn rotate_left(mut node: Box<Node>) -> Box<Node> {
-        let mut new_root = node.right.take().unwrap();
-        node.right = new_root.left.take();
-        new_root.left = Some(node);
-        new_root
-    }
-
-    fn rotate_right(mut node: Box<Node>) -> Box<Node> {
-        let mut new_root = node.left.take().unwrap();
-        node.left = new_root.right.take();
-        new_root.right = Some(node);
-        new_root
-    }
-
-    fn inorder(node: &Option<Box<Node>>) {
-        if let Some(n) = node {
-            Self::inorder(&n.left);
-            print!("({}, {}) ", n.key, n.val);
-            Self::inorder(&n.right);
-        }
-    }
-}
-
-pub struct Treap {
-    root: Option<Box<Node>>,
-    rng: XorShift32,
-}
-
-impl Treap {
-    pub fn new() -> Self {
-        Treap {
-            root: None,
-            rng: XorShift32::new(0x12345678),
-        }
-    }
-
-    pub fn insert(&mut self, key: i32, val: i32) {
-        self.root = Node::insert(self.root.take(), key, val, &mut self.rng);
-    }
-
-    /// 指定された key をすべて削除する（存在しなければ無視）
-    pub fn erase(&mut self, key: i32) {
-        self.root = Node::erase_all(self.root.take(), key);
-    }
-
-    /// 指定 key をすべて削除し、(key, value) を1つだけ挿入する
-    pub fn update(&mut self, key: i32, val: i32) {
-        self.erase(key);
-        self.insert(key, val);
-    }
-
-    pub fn inorder(&self) {
-        Node::inorder(&self.root);
-        println!();
-    }
-}
-
+// ------------------------ Xorshift RNG ------------------------
 pub struct XorShift32 {
     state: u32,
 }
@@ -145,25 +20,201 @@ impl XorShift32 {
     }
 }
 
+// ------------------------ Treap Node ------------------------
+#[derive(Debug)]
+struct Node<T: Clone + Debug> {
+    key: i32,
+    val: T,
+    sum: T,
+    prio: u32,
+    left: Option<Box<Node<T>>>,
+    right: Option<Box<Node<T>>>,
+}
+
+impl<T: Clone + Debug> Node<T> {
+    fn new(key: i32, val: T, prio: u32, op: fn(&T, &T) -> T) -> Box<Self> {
+        let sum = val.clone();
+        Box::new(Node {
+            key,
+            val,
+            sum,
+            prio,
+            left: None,
+            right: None,
+        })
+    }
+
+    fn update(&mut self, op: fn(&T, &T) -> T, e: &T) {
+        self.sum = self.val.clone();
+        if let Some(l) = &self.left {
+            self.sum = op(&l.sum, &self.sum);
+        }
+        if let Some(r) = &self.right {
+            self.sum = op(&self.sum, &r.sum);
+        }
+    }
+
+    fn rotate_left(mut node: Box<Node<T>>, op: fn(&T, &T) -> T, e: &T) -> Box<Node<T>> {
+        let mut new_root = node.right.take().unwrap();
+        node.right = new_root.left.take();
+        node.update(op, e);
+        new_root.left = Some(node);
+        new_root.update(op, e);
+        new_root
+    }
+
+    fn rotate_right(mut node: Box<Node<T>>, op: fn(&T, &T) -> T, e: &T) -> Box<Node<T>> {
+        let mut new_root = node.left.take().unwrap();
+        node.left = new_root.right.take();
+        node.update(op, e);
+        new_root.right = Some(node);
+        new_root.update(op, e);
+        new_root
+    }
+
+    fn insert(
+        node: Option<Box<Node<T>>>,
+        key: i32,
+        val: T,
+        rng: &mut XorShift32,
+        op: fn(&T, &T) -> T,
+        e: &T,
+    ) -> Option<Box<Node<T>>> {
+        match node {
+            None => Some(Node::new(key, val, rng.next(), op)),
+            Some(mut n) => {
+                if key < n.key {
+                    n.left = Self::insert(n.left.take(), key, val, rng, op, e);
+                    if n.left.as_ref().unwrap().prio > n.prio {
+                        return Some(Self::rotate_right(n, op, e));
+                    }
+                } else {
+                    n.right = Self::insert(n.right.take(), key, val, rng, op, e);
+                    if n.right.as_ref().unwrap().prio > n.prio {
+                        return Some(Self::rotate_left(n, op, e));
+                    }
+                }
+                n.update(op, e);
+                Some(n)
+            }
+        }
+    }
+
+    fn erase_all(
+        node: Option<Box<Node<T>>>,
+        key: i32,
+        op: fn(&T, &T) -> T,
+        e: &T,
+    ) -> Option<Box<Node<T>>> {
+        match node {
+            None => None,
+            Some(mut n) => {
+                n.left = Self::erase_all(n.left.take(), key, op, e);
+                n.right = Self::erase_all(n.right.take(), key, op, e);
+                if n.key == key {
+                    return Self::merge(n.left.take(), n.right.take(), op, e);
+                }
+                n.update(op, e);
+                Some(n)
+            }
+        }
+    }
+
+    fn merge(
+        a: Option<Box<Node<T>>>,
+        b: Option<Box<Node<T>>>,
+        op: fn(&T, &T) -> T,
+        e: &T,
+    ) -> Option<Box<Node<T>>> {
+        match (a, b) {
+            (None, r) => r,
+            (l, None) => l,
+            (Some(mut lnode), Some(mut rnode)) => {
+                if lnode.prio > rnode.prio {
+                    lnode.right = Self::merge(lnode.right.take(), Some(rnode), op, e);
+                    lnode.update(op, e);
+                    Some(lnode)
+                } else {
+                    rnode.left = Self::merge(Some(lnode), rnode.left.take(), op, e);
+                    rnode.update(op, e);
+                    Some(rnode)
+                }
+            }
+        }
+    }
+
+    fn prod(node: &Option<Box<Node<T>>>, l: i32, r: i32, op: fn(&T, &T) -> T, e: &T) -> T {
+        match node {
+            None => e.clone(),
+            Some(n) => {
+                if n.key < l {
+                    Self::prod(&n.right, l, r, op, e)
+                } else if n.key >= r {
+                    Self::prod(&n.left, l, r, op, e)
+                } else {
+                    let left = Self::prod(&n.left, l, r, op, e);
+                    let right = Self::prod(&n.right, l, r, op, e);
+                    op(&left, &op(&n.val, &right))
+                }
+            }
+        }
+    }
+}
+
+// ------------------------ Treap 本体 ------------------------
+pub struct Treap<T: Clone + Debug> {
+    root: Option<Box<Node<T>>>,
+    rng: XorShift32,
+    op: fn(&T, &T) -> T,
+    e: T,
+}
+
+impl<T: Clone + Debug> Treap<T> {
+    pub fn new(op: fn(&T, &T) -> T, e: T) -> Self {
+        Treap {
+            root: None,
+            rng: XorShift32::new(0x12345678),
+            op,
+            e,
+        }
+    }
+
+    pub fn insert(&mut self, key: i32, val: T) {
+        self.root = Node::insert(self.root.take(), key, val, &mut self.rng, self.op, &self.e);
+    }
+
+    pub fn erase(&mut self, key: i32) {
+        self.root = Node::erase_all(self.root.take(), key, self.op, &self.e);
+    }
+
+    pub fn update(&mut self, key: i32, val: T) {
+        self.erase(key);
+        self.insert(key, val);
+    }
+
+    pub fn prod(&self, l: i32, r: i32) -> T {
+        Node::prod(&self.root, l, r, self.op, &self.e)
+    }
+
+    pub fn all_prod(&self) -> T {
+        self.root.as_ref().map_or(self.e.clone(), |n| n.sum.clone())
+    }
+}
+
+// ------------------------ Main ------------------------
 fn main() {
-    let mut treap = Treap::new();
+    let mut treap = Treap::new(|&a, &b| a + b, 0);
 
-    treap.insert(5, 100);
-    treap.insert(3, 200);
-    treap.insert(3, 201);
-    treap.insert(3, 202);
-    treap.insert(7, 300);
+    treap.insert(10, 1);
+    treap.insert(20, 2);
+    treap.insert(15, 3);
+    treap.insert(25, 4);
 
-    println!("Before erase:");
-    treap.inorder(); // => (3,200) (3,201) (3,202) (5,100) (7,300)
+    println!("All sum: {}", treap.all_prod()); // 10
 
-    treap.erase(3);
+    println!("prod(10, 20): {}", treap.prod(10, 20)); // 4
+    println!("prod(15, 30): {}", treap.prod(15, 30)); // 9
 
-    println!("After erase(3):");
-    treap.inorder(); // => (5,100) (7,300)
-
-    treap.update(7, 777);
-
-    println!("After update(7, 777):");
-    treap.inorder(); // => (5,100) (7,777)
+    treap.update(15, 10); // 3 -> 10
+    println!("After update: prod(10,30): {}", treap.prod(10, 30)); // 1+10+2+4 = 17
 }
