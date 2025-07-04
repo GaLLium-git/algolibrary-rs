@@ -12,7 +12,7 @@ fn main() {
     let id = 0i64;
     let e = 0i64;
 
-    let mut treap = Treap::new(op, e, mapping, id, composite);
+    let mut treap = LazyImplicitTreap::new(op, e, mapping, id, composite);
 
     treap.insert(1, 10);
     treap.insert(8, 30);
@@ -356,7 +356,7 @@ impl<T: Clone + std::fmt::Debug , F: Clone + std::fmt::Debug + PartialEq> Node<T
     }
 }
 
-pub struct Treap<T: Clone + std::fmt::Debug , F: Clone +std::fmt::Debug+ PartialEq> {
+pub struct LazyImplicitTreap<T: Clone + std::fmt::Debug , F: Clone +std::fmt::Debug+ PartialEq> {
     root: Option<Box<Node<T, F>>>,
     rng: XorShift32,
     op: fn(&T, &T) -> T,
@@ -366,7 +366,7 @@ pub struct Treap<T: Clone + std::fmt::Debug , F: Clone +std::fmt::Debug+ Partial
     composite: fn(&F, &F) -> F,
 }
 
-impl<T: Clone + std::fmt::Debug, F: Clone + std::fmt::Debug + PartialEq> Treap<T, F> {
+impl<T: Clone + std::fmt::Debug, F: Clone + std::fmt::Debug + PartialEq> LazyImplicitTreap<T, F> {
     pub fn new(
         op: fn(&T, &T) -> T,
         e: T,
@@ -374,7 +374,7 @@ impl<T: Clone + std::fmt::Debug, F: Clone + std::fmt::Debug + PartialEq> Treap<T
         id: F,
         composite: fn(&F, &F) -> F,
     ) -> Self {
-        Treap {
+        LazyImplicitTreap {
             root: None,
             rng: XorShift32::new(0x12345678),
             op,
