@@ -1,4 +1,38 @@
-use std::fmt::Debug;
+fn main() {
+    // 例: 遅延伝搬区間和
+    fn op(a: &i64, b: &i64) -> i64 {
+        a + b
+    }
+    fn mapping(f: &i64, x: &i64) -> i64 {
+        f + x
+    }
+    fn composite(f: &i64, g: &i64) -> i64 {
+        f + g
+    }
+    let id = 0i64;
+    let e = 0i64;
+
+    let mut treap = Treap::new(op, e, mapping, id, composite);
+
+    treap.insert(1, 10);
+    treap.insert(8, 30);
+    treap.insert(8, 20);
+    treap.insert(16,100);
+    treap.debug(); // (1,10) (2,20) (3,30)
+
+    treap.erase_all(8);
+    treap.debug(); // (1,10) (3,30)
+
+    treap.update(3, 100);
+    treap.debug(); // (1,10) (3,100)
+
+    println!("prod(1,4) = {}", treap.prod(1, 4)); // 10+100=110
+
+    treap.apply(1, 4, 5);
+    treap.debug(); // (1,15) (3,105)
+
+    println!("all_prod = {}", treap.all_prod()); // 15 + 105 = 120
+}
 
 pub struct XorShift32 {
     state: u32,
@@ -20,7 +54,7 @@ impl XorShift32 {
 }
 
 #[derive(Debug)]
-struct Node<T: Clone + Debug, F: Clone + Debug + PartialEq> {
+struct Node<T: Clone + std::fmt::Debug , F: Clone +std::fmt::Debug + PartialEq> {
     key: i32,
     val: T,
     sum: T,
@@ -30,7 +64,7 @@ struct Node<T: Clone + Debug, F: Clone + Debug + PartialEq> {
     right: Option<Box<Node<T, F>>>,
 }
 
-impl<T: Clone + Debug, F: Clone + Debug + PartialEq> Node<T, F> {
+impl<T: Clone + std::fmt::Debug , F: Clone + std::fmt::Debug + PartialEq> Node<T, F> {
     fn new(val: T, prio: u32, e: &T, id: &F, key: i32) -> Box<Self> {
         Box::new(Node {
             key,
@@ -173,6 +207,24 @@ impl<T: Clone + Debug, F: Clone + Debug + PartialEq> Node<T, F> {
             }
         }
     }
+    
+    fn erase_all(
+        node: Option<Box<Node<T, F>>>,
+        key: i32,
+        op: fn(&T, &T) -> T,
+        e: &T,
+        mapping: fn(&F, &T) -> T,
+        composite: fn(&F, &F) -> F,
+        id: &F,
+    ) -> Option<Box<Node<T, F>>> {
+        // 1. keyより小さい部分木, それ以外に分割
+        let (less, geq) = Self::split(node, key, op, e, mapping, composite, id);
+        // 2. key以上の部分木をさらにkey+1で分割し、keyに等しい部分木を切り離す
+        let (eq, greater) = Self::split(geq, key + 1, op, e, mapping, composite, id);
+        // eq は key == target の部分木なので破棄、less と greater をマージ
+        Self::merge(less, greater, op, e, mapping, composite, id)
+    }
+
 
     fn merge(
         a: Option<Box<Node<T, F>>>,
@@ -332,7 +384,7 @@ impl<T: Clone + Debug, F: Clone + Debug + PartialEq> Node<T, F> {
     }
 }
 
-pub struct Treap<T: Clone + Debug, F: Clone + Debug + PartialEq> {
+pub struct Treap<T: Clone + std::fmt::Debug , F: Clone +std::fmt::Debug+ PartialEq> {
     root: Option<Box<Node<T, F>>>,
     rng: XorShift32,
     op: fn(&T, &T) -> T,
@@ -342,7 +394,7 @@ pub struct Treap<T: Clone + Debug, F: Clone + Debug + PartialEq> {
     composite: fn(&F, &F) -> F,
 }
 
-impl<T: Clone + Debug, F: Clone + Debug + PartialEq> Treap<T, F> {
+impl<T: Clone + std::fmt::Debug, F: Clone + std::fmt::Debug + PartialEq> Treap<T, F> {
     pub fn new(
         op: fn(&T, &T) -> T,
         e: T,
@@ -375,8 +427,19 @@ impl<T: Clone + Debug, F: Clone + Debug + PartialEq> Treap<T, F> {
         );
     }
 
-    pub fn erase(&mut self, key: i32) {
+    pub fn erase_one(&mut self, key: i32) {
         self.root = Node::erase_one(
+            self.root.take(),
+            key,
+            self.op,
+            &self.e,
+            self.mapping,
+            self.composite,
+            &self.id,
+        );
+    }
+    pub fn erase_all(&mut self, key: i32) {
+        self.root = Node::erase_all(
             self.root.take(),
             key,
             self.op,
@@ -388,21 +451,8 @@ impl<T: Clone + Debug, F: Clone + Debug + PartialEq> Treap<T, F> {
     }
 
     pub fn update(&mut self, key: i32, val: T) {
-        // update existing node val if found (only first occurrence)
-        let updated = Node::update_key_val(
-            &mut self.root,
-            key,
-            val.clone(),
-            self.op,
-            &self.e,
-            self.mapping,
-            self.composite,
-            &self.id,
-        );
-        if !updated {
-            // if not found, insert new node
-            self.insert(key, val);
-        }
+        self.erase_all(key);
+        self.insert(key,val);
     }
 
     pub fn prod(&self, l: i32, r: i32) -> T {
@@ -441,38 +491,3 @@ impl<T: Clone + Debug, F: Clone + Debug + PartialEq> Treap<T, F> {
     }
 }
 
-fn main() {
-    // 例: 遅延伝搬区間和
-    fn op(a: &i64, b: &i64) -> i64 {
-        a + b
-    }
-    fn mapping(f: &i64, x: &i64) -> i64 {
-        f + x
-    }
-    fn composite(f: &i64, g: &i64) -> i64 {
-        f + g
-    }
-    let id = 0i64;
-    let e = 0i64;
-
-    let mut treap = Treap::new(op, e, mapping, id, composite);
-
-    treap.insert(1, 10);
-    treap.insert(8, 30);
-    treap.insert(16, 20);
-    treap.insert(16,10);
-    treap.debug(); // (1,10) (2,20) (3,30)
-
-    treap.erase(16);
-    treap.debug(); // (1,10) (3,30)
-
-    treap.update(3, 100);
-    treap.debug(); // (1,10) (3,100)
-
-    println!("prod(1,4) = {}", treap.prod(1, 4)); // 10+100=110
-
-    treap.apply(1, 4, 5);
-    treap.debug(); // (1,15) (3,105)
-
-    println!("all_prod = {}", treap.all_prod()); // 15 + 105 = 120
-}
