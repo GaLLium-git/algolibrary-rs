@@ -220,7 +220,7 @@ impl<T: Clone + Debug> Treap<T> {
 
 // ------------------------ Main ------------------------
 fn main() {
-    let mut treap = Treap::new(|a, b| a + b, 0);
+    let mut treap = Treap::new(|&a, &b| a + b, 0);
 
     treap.insert(10, 1);
     treap.insert(20, 2);
