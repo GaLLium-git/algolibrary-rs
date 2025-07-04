@@ -194,7 +194,7 @@ pub struct ImplicitTreap<T: Clone + std::fmt::Debug> {
 
 impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
     pub fn new(op: fn(&T, &T) -> T, e: T) -> Self {
-        Treap {
+        ImplicitTreap {
             root: None,
             rng: XorShift32::new(0x12345678),
             op,
