@@ -32,7 +32,7 @@ struct Node<T: Clone + Debug> {
 }
 
 impl<T: Clone + Debug> Node<T> {
-    fn new(key: i32, val: T, prio: u32, op: fn(&T, &T) -> T) -> Box<Self> {
+    fn new(key: i32, val: T, prio: u32, _op: fn(&T, &T) -> T) -> Box<Self> {
         let sum = val.clone();
         Box::new(Node {
             key,
@@ -143,18 +143,26 @@ impl<T: Clone + Debug> Node<T> {
         }
     }
 
-    fn prod(node: &Option<Box<Node<T>>>, l: i32, r: i32, op: fn(&T, &T) -> T, e: &T) -> T {
+    // keyで分割。key未満を左、key以上を右にする
+    fn split(
+        node: Option<Box<Node<T>>>,
+        key: i32,
+        op: fn(&T, &T) -> T,
+        e: &T,
+    ) -> (Option<Box<Node<T>>>, Option<Box<Node<T>>>) {
         match node {
-            None => e.clone(),
-            Some(n) => {
-                if n.key < l {
-                    Self::prod(&n.right, l, r, op, e)
-                } else if n.key >= r {
-                    Self::prod(&n.left, l, r, op, e)
+            None => (None, None),
+            Some(mut n) => {
+                if n.key < key {
+                    let (l, r) = Self::split(n.right.take(), key, op, e);
+                    n.right = l;
+                    n.update(op, e);
+                    (Some(n), r)
                 } else {
-                    let left = Self::prod(&n.left, l, r, op, e);
-                    let right = Self::prod(&n.right, l, r, op, e);
-                    op(&left, &op(&n.val, &right))
+                    let (l, r) = Self::split(n.left.take(), key, op, e);
+                    n.left = r;
+                    n.update(op, e);
+                    (l, Some(n))
                 }
             }
         }
@@ -192,8 +200,17 @@ impl<T: Clone + Debug> Treap<T> {
         self.insert(key, val);
     }
 
-    pub fn prod(&self, l: i32, r: i32) -> T {
-        Node::prod(&self.root, l, r, self.op, &self.e)
+    // splitして区間の集約値を返し、元に戻す
+    pub fn prod(&mut self, l: i32, r: i32) -> T {
+        let (t1, t2) = Node::split(self.root.take(), l, self.op, &self.e);
+        let (t21, t22) = Node::split(t2, r, self.op, &self.e);
+
+        let res = t21.as_ref().map_or(self.e.clone(), |n| n.sum.clone());
+
+        let merged = Node::merge(t21, t22, self.op, &self.e);
+        self.root = Node::merge(t1, merged, self.op, &self.e);
+
+        res
     }
 
     pub fn all_prod(&self) -> T {
@@ -203,7 +220,7 @@ impl<T: Clone + Debug> Treap<T> {
 
 // ------------------------ Main ------------------------
 fn main() {
-    let mut treap = Treap::new(|&a, &b| a + b, 0);
+    let mut treap = Treap::new(|a, b| a + b, 0);
 
     treap.insert(10, 1);
     treap.insert(20, 2);
@@ -212,9 +229,9 @@ fn main() {
 
     println!("All sum: {}", treap.all_prod()); // 10
 
-    println!("prod(10, 20): {}", treap.prod(10, 20)); // 4
-    println!("prod(15, 30): {}", treap.prod(15, 30)); // 9
+    println!("prod(10, 20): {}", treap.prod(10, 20)); // 4 (1 + 3)
+    println!("prod(15, 30): {}", treap.prod(15, 30)); // 9 (3 + 2 + 4)
 
     treap.update(15, 10); // 3 -> 10
-    println!("After update: prod(10,30): {}", treap.prod(10, 30)); // 1+10+2+4 = 17
+    println!("After update: prod(10,30): {}", treap.prod(10, 30)); // 1 + 10 + 2 + 4 = 17
 }
