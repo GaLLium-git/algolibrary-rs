@@ -20,7 +20,7 @@ fn main() {
     treap.insert(16,100);
     treap.debug(); // (1,10) (2,20) (3,30)
 
-    treap.erase_all(8);
+    treap.erase(8);
     treap.debug(); // (1,10) (3,30)
 
     treap.update(3, 100);
@@ -33,6 +33,7 @@ fn main() {
 
     println!("all_prod = {}", treap.all_prod()); // 15 + 105 = 120
 }
+
 
 pub struct XorShift32 {
     state: u32,
@@ -178,35 +179,6 @@ impl<T: Clone + std::fmt::Debug , F: Clone + std::fmt::Debug + PartialEq> Node<T
         }
     }
 
-    // erase deletes the first found node with key
-    fn erase_one(
-        node: Option<Box<Node<T, F>>>,
-        key: i32,
-        op: fn(&T, &T) -> T,
-        e: &T,
-        mapping: fn(&F, &T) -> T,
-        composite: fn(&F, &F) -> F,
-        id: &F,
-    ) -> Option<Box<Node<T, F>>> {
-        match node {
-            None => None,
-            Some(mut n) => {
-                n.push_down(mapping, composite, id);
-                if key < n.key {
-                    n.left = Self::erase_one(n.left.take(), key, op, e, mapping, composite, id);
-                    n.update(op, e);
-                    Some(n)
-                } else if key > n.key {
-                    n.right = Self::erase_one(n.right.take(), key, op, e, mapping, composite, id);
-                    n.update(op, e);
-                    Some(n)
-                } else {
-                    // found node with key, erase this node by merging children
-                    Self::merge(n.left.take(), n.right.take(), op, e, mapping, composite, id)
-                }
-            }
-        }
-    }
     
     fn erase_all(
         node: Option<Box<Node<T, F>>>,
@@ -427,18 +399,7 @@ impl<T: Clone + std::fmt::Debug, F: Clone + std::fmt::Debug + PartialEq> Treap<T
         );
     }
 
-    pub fn erase_one(&mut self, key: i32) {
-        self.root = Node::erase_one(
-            self.root.take(),
-            key,
-            self.op,
-            &self.e,
-            self.mapping,
-            self.composite,
-            &self.id,
-        );
-    }
-    pub fn erase_all(&mut self, key: i32) {
+    pub fn erase(&mut self, key: i32) {
         self.root = Node::erase_all(
             self.root.take(),
             key,
@@ -451,7 +412,7 @@ impl<T: Clone + std::fmt::Debug, F: Clone + std::fmt::Debug + PartialEq> Treap<T
     }
 
     pub fn update(&mut self, key: i32, val: T) {
-        self.erase_all(key);
+        self.erase(key);
         self.insert(key,val);
     }
 
@@ -490,4 +451,3 @@ impl<T: Clone + std::fmt::Debug, F: Clone + std::fmt::Debug + PartialEq> Treap<T
         println!();
     }
 }
-
