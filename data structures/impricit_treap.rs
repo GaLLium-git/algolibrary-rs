@@ -1,5 +1,5 @@
 fn main() {
-    let mut treap = Treap::new(|&a, &b| a + b, 0);
+    let mut treap = ImplicitTreap::new(|&a, &b| a + b, 0);
 
     treap.insert(10, 1);
     treap.insert(20, 2);
@@ -184,15 +184,15 @@ impl<T: Clone + std::fmt::Debug> Node<T> {
     }
 }
 
-// ------------------------ Treap 本体 ------------------------
-pub struct Treap<T: Clone + std::fmt::Debug> {
+
+pub struct ImplicitTreap<T: Clone + std::fmt::Debug> {
     root: Option<Box<Node<T>>>,
     rng: XorShift32,
     op: fn(&T, &T) -> T,
     e: T,
 }
 
-impl<T: Clone + std::fmt::Debug> Treap<T> {
+impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
     pub fn new(op: fn(&T, &T) -> T, e: T) -> Self {
         Treap {
             root: None,
