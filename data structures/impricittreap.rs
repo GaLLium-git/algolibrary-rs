@@ -341,6 +341,29 @@ impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
             e: self.e.clone(),
         }
     }
+    pub fn debug(&self) {
+        fn inorder<T: Clone + std::fmt::Debug>(
+            node: &Option<Box<Node<T>>>,
+            out: &mut Vec<(usize, T)>,
+        ) {
+            if let Some(n) = node {
+                inorder(&n.left, out);
+                out.push((n.key, n.val.clone()));
+                inorder(&n.right, out);
+            }
+        }
+
+        let mut res = vec![];
+        inorder(&self.root, &mut res);
+
+        for (i, (k, v)) in res.iter().enumerate() {
+            if i > 0 {
+                print!(" ");
+            }
+            print!("({},{:?})", k, v);
+        }
+        println!();
+    }
 }
 
 
