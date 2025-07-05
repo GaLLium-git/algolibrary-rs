@@ -8,13 +8,20 @@ fn main() {
 
     println!("All sum: {}", treap.all_prod()); // 10
 
-    println!("prod(10, 20): {}", treap.prod(10, 20)); // 4 (1 + 3)
-    println!("prod(15, 30): {}", treap.prod(15, 30)); // 9 (3 + 2 + 4)
+    println!("prod(10, 20): {}", treap.prod(10, 20)); // 1 + 3 = 4
+    println!("prod(15, 30): {}", treap.prod(15, 30)); // 3 + 2 + 4 = 9
 
     treap.update(15, 10); // 3 -> 10
     println!("After update: prod(10,30): {}", treap.prod(10, 30)); // 1 + 10 + 2 + 4 = 17
-}
 
+    // Split and Merge demo
+    let (left, right) = treap.split(20);
+    println!("Left split sum: {}", left.all_prod());  // 1 + 10 = 11
+    println!("Right split sum: {}", right.all_prod()); // 2 + 4 = 6
+
+    let merged = left.merge(right);
+    println!("Merged sum: {}", merged.all_prod()); // 17
+}
 
 pub struct XorShift32 {
     state: u32,
@@ -34,7 +41,6 @@ impl XorShift32 {
         x
     }
 }
-
 
 #[derive(Debug)]
 struct Node<T: Clone + std::fmt::Debug> {
@@ -59,7 +65,7 @@ impl<T: Clone + std::fmt::Debug> Node<T> {
         })
     }
 
-    fn update(&mut self, op: fn(&T, &T) -> T, e: &T) {
+    fn update(&mut self, op: fn(&T, &T) -> T, _e: &T) {
         self.sum = self.val.clone();
         if let Some(l) = &self.left {
             self.sum = op(&l.sum, &self.sum);
@@ -184,7 +190,6 @@ impl<T: Clone + std::fmt::Debug> Node<T> {
     }
 }
 
-
 pub struct ImplicitTreap<T: Clone + std::fmt::Debug> {
     root: Option<Box<Node<T>>>,
     rng: XorShift32,
@@ -215,7 +220,6 @@ impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
         self.insert(key, val);
     }
 
-    
     pub fn prod(&mut self, l: i32, r: i32) -> T {
         let (t1, t2) = Node::split(self.root.take(), l, self.op, &self.e);
         let (t21, t22) = Node::split(t2, r, self.op, &self.e);
@@ -231,5 +235,32 @@ impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
     pub fn all_prod(&self) -> T {
         self.root.as_ref().map_or(self.e.clone(), |n| n.sum.clone())
     }
-}
 
+    pub fn split(mut self, key: i32) -> (Self, Self) {
+        let (left, right) = Node::split(self.root.take(), key, self.op, &self.e);
+        (
+            ImplicitTreap {
+                root: left,
+                rng: XorShift32::new(self.rng.state),
+                op: self.op,
+                e: self.e.clone(),
+            },
+            ImplicitTreap {
+                root: right,
+                rng: XorShift32::new(self.rng.state),
+                op: self.op,
+                e: self.e.clone(),
+            },
+        )
+    }
+
+    pub fn merge(mut self, mut other: Self) -> Self {
+        let root = Node::merge(self.root.take(), other.root.take(), self.op, &self.e);
+        ImplicitTreap {
+            root,
+            rng: XorShift32::new(self.rng.state ^ other.rng.state),
+            op: self.op,
+            e: self.e.clone(),
+        }
+    }
+}
