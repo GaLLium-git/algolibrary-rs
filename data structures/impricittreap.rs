@@ -1,4 +1,3 @@
-
 fn main() {
     fn op(a: &i32, b: &i32) -> i32 {
         a + b
@@ -63,6 +62,7 @@ fn main() {
 
 
 // === Treap本体 ===
+
 
 pub struct XorShift32 {
     state: u32,
@@ -341,6 +341,7 @@ impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
             e: self.e.clone(),
         }
     }
+    
     pub fn debug(&self) {
         fn inorder<T: Clone + std::fmt::Debug>(
             node: &Option<Box<Node<T>>>,
@@ -364,6 +365,5 @@ impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
         }
         println!();
     }
-}
 
-
+}   
