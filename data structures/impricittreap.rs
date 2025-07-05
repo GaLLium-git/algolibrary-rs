@@ -65,6 +65,28 @@ fn main() {
 
 // === Treap本体 ===
 
+
+#[derive(Clone)]
+pub struct XorShift64 {
+    state: u64,
+}
+
+impl XorShift64 {
+    pub fn new(seed: u64) -> Self {
+        XorShift64 { state: seed }
+    }
+
+    pub fn next(&mut self) -> u64 {
+        let mut x = self.state;
+        x ^= x << 13;
+        x ^= x >> 7;
+        x ^= x << 17;
+        self.state = x;
+        x
+    }
+}
+
+
 #[derive(Debug)]
 struct Node<T: Clone + std::fmt::Debug> {
     key: usize,
@@ -214,26 +236,6 @@ impl<T: Clone + std::fmt::Debug> Node<T> {
         } else {
             self.right.as_ref().and_then(|r| r.get(key))
         }
-    }
-}
-
-#[derive(Clone)]
-pub struct XorShift64 {
-    state: u64,
-}
-
-impl XorShift64 {
-    pub fn new(seed: u64) -> Self {
-        XorShift64 { state: seed }
-    }
-
-    pub fn next(&mut self) -> u64 {
-        let mut x = self.state;
-        x ^= x << 13;
-        x ^= x >> 7;
-        x ^= x << 17;
-        self.state = x;
-        x
     }
 }
 
