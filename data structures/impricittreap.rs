@@ -266,12 +266,16 @@ pub struct ImplicitTreap<T: Clone + std::fmt::Debug> {
 
 impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
     pub fn new(op: fn(&T, &T) -> T, e: T) -> Self {
-        ImplicitTreap {
+        Self {
             root: None,
             rng: XorShift32::new(0x12345678),
             op,
             e,
         }
+    }
+
+    pub fn size(&self) -> usize {
+        self.root.as_ref().map_or(0, |n| n.size)
     }
 
     pub fn insert(&mut self, key: usize, val: T) {
@@ -287,6 +291,18 @@ impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
         self.insert(key, val);
     }
 
+    pub fn get(&self, key: usize) -> Option<&T> {
+        self.root.as_ref().and_then(|n| n.get(key))
+    }
+
+    pub fn kth(&self, k: usize) -> Option<&T> {
+        if k >= self.size() {
+            None
+        } else {
+            self.root.as_ref().and_then(|n| n.kth(k))
+        }
+    }
+
     pub fn prod(&mut self, l: usize, r: usize) -> T {
         let (t1, t2) = Node::split(self.root.take(), l, self.op, &self.e);
         let (t21, t22) = Node::split(t2, r, self.op, &self.e);
@@ -300,32 +316,16 @@ impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
         self.root.as_ref().map_or(self.e.clone(), |n| n.sum.clone())
     }
 
-    pub fn size(&self) -> usize {
-        self.root.as_ref().map_or(0, |n| n.size)
-    }
-
-    pub fn kth(&self, k: usize) -> Option<&T> {
-        if k >= self.size() {
-            None
-        } else {
-            self.root.as_ref().and_then(|node| node.kth(k))
-        }
-    }
-
-    pub fn get(&self, key: usize) -> Option<&T> {
-        self.root.as_ref().and_then(|node| node.get(key))
-    }
-
     pub fn split(self, key: usize) -> (Self, Self) {
         let (left, right) = Node::split(self.root, key, self.op, &self.e);
         (
-            ImplicitTreap {
+            Self {
                 root: left,
                 rng: self.rng.clone(),
                 op: self.op,
                 e: self.e.clone(),
             },
-            ImplicitTreap {
+            Self {
                 root: right,
                 rng: self.rng.clone(),
                 op: self.op,
@@ -336,14 +336,14 @@ impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
 
     pub fn merge(self, other: Self) -> Self {
         let root = Node::merge(self.root, other.root, self.op, &self.e);
-        ImplicitTreap {
+        Self {
             root,
             rng: self.rng,
             op: self.op,
             e: self.e.clone(),
         }
     }
-    
+
     pub fn debug(&self) {
         fn inorder<T: Clone + std::fmt::Debug>(
             node: &Option<Box<Node<T>>>,
@@ -367,5 +367,5 @@ impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
         }
         println!();
     }
+}
 
-}   
