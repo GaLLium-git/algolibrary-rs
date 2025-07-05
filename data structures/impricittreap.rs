@@ -61,9 +61,11 @@ fn main() {
 }
 
 
+
+
 // === Treap本体 ===
 
-
+#[derive(Clone)]
 pub struct XorShift32 {
     state: u32,
 }
@@ -319,13 +321,13 @@ impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
         (
             ImplicitTreap {
                 root: left,
-                rng: XorShift32::new(0x12345678),
+                rng: self.rng.clone(),
                 op: self.op,
                 e: self.e.clone(),
             },
             ImplicitTreap {
                 root: right,
-                rng: XorShift32::new(0x12345678),
+                rng: self.rng.clone(),
                 op: self.op,
                 e: self.e.clone(),
             },
@@ -336,7 +338,7 @@ impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
         let root = Node::merge(self.root, other.root, self.op, &self.e);
         ImplicitTreap {
             root,
-            rng: XorShift32::new(0x12345678),
+            rng: self.rng,
             op: self.op,
             e: self.e.clone(),
         }
