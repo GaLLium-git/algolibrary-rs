@@ -64,6 +64,159 @@ fn main() {
 
 
 // === Treap本体 ===
+
+#[derive(Debug)]
+struct Node<T: Clone + std::fmt::Debug> {
+    key: usize,
+    val: T,
+    sum: T,
+    prio: u64,
+    size: usize,
+    left: Option<Box<Node<T>>>,
+    right: Option<Box<Node<T>>>,
+}
+
+impl<T: Clone + std::fmt::Debug> Node<T> {
+    fn new(key: usize, val: T, prio: u64, _op: fn(&T, &T) -> T) -> Box<Self> {
+        Box::new(Node {
+            key,
+            val: val.clone(),
+            sum: val,
+            prio,
+            size: 1,
+            left: None,
+            right: None,
+        })
+    }
+
+    fn update(&mut self, op: fn(&T, &T) -> T, _e: &T) {
+        self.sum = self.val.clone();
+        self.size = 1;
+        if let Some(l) = &self.left {
+            self.sum = op(&l.sum, &self.sum);
+            self.size += l.size;
+        }
+        if let Some(r) = &self.right {
+            self.sum = op(&self.sum, &r.sum);
+            self.size += r.size;
+        }
+    }
+
+    fn rotate_left(mut node: Box<Node<T>>, op: fn(&T, &T) -> T, e: &T) -> Box<Node<T>> {
+        let mut new_root = node.right.take().unwrap();
+        node.right = new_root.left.take();
+        node.update(op, e);
+        new_root.left = Some(node);
+        new_root.update(op, e);
+        new_root
+    }
+
+    fn rotate_right(mut node: Box<Node<T>>, op: fn(&T, &T) -> T, e: &T) -> Box<Node<T>> {
+        let mut new_root = node.left.take().unwrap();
+        node.left = new_root.right.take();
+        node.update(op, e);
+        new_root.right = Some(node);
+        new_root.update(op, e);
+        new_root
+    }
+
+    fn insert(
+        node: Option<Box<Node<T>>>,
+        key: usize,
+        val: T,
+        rng: &mut XorShift64,
+        op: fn(&T, &T) -> T,
+        e: &T,
+    ) -> Option<Box<Node<T>>> {
+        match node {
+            None => Some(Node::new(key, val, rng.next(), op)),
+            Some(mut n) => {
+                if key < n.key {
+                    n.left = Self::insert(n.left.take(), key, val, rng, op, e);
+                    if n.left.as_ref().unwrap().prio > n.prio {
+                        return Some(Self::rotate_right(n, op, e));
+                    }
+                } else {
+                    n.right = Self::insert(n.right.take(), key, val, rng, op, e);
+                    if n.right.as_ref().unwrap().prio > n.prio {
+                        return Some(Self::rotate_left(n, op, e));
+                    }
+                }
+                n.update(op, e);
+                Some(n)
+            }
+        }
+    }
+
+    fn merge(
+        a: Option<Box<Node<T>>>,
+        b: Option<Box<Node<T>>>,
+        op: fn(&T, &T) -> T,
+        e: &T,
+    ) -> Option<Box<Node<T>>> {
+        match (a, b) {
+            (None, r) => r,
+            (l, None) => l,
+            (Some(mut l), Some(mut r)) => {
+                if l.prio > r.prio {
+                    l.right = Self::merge(l.right.take(), Some(r), op, e);
+                    l.update(op, e);
+                    Some(l)
+                } else {
+                    r.left = Self::merge(Some(l), r.left.take(), op, e);
+                    r.update(op, e);
+                    Some(r)
+                }
+            }
+        }
+    }
+
+    fn split(
+        node: Option<Box<Node<T>>>,
+        key: usize,
+        op: fn(&T, &T) -> T,
+        e: &T,
+    ) -> (Option<Box<Node<T>>>, Option<Box<Node<T>>>) {
+        match node {
+            None => (None, None),
+            Some(mut n) => {
+                if n.key < key {
+                    let (l, r) = Self::split(n.right.take(), key, op, e);
+                    n.right = l;
+                    n.update(op, e);
+                    (Some(n), r)
+                } else {
+                    let (l, r) = Self::split(n.left.take(), key, op, e);
+                    n.left = r;
+                    n.update(op, e);
+                    (l, Some(n))
+                }
+            }
+        }
+    }
+
+    fn kth(&self, k: usize) -> Option<&T> {
+        let lsize = self.left.as_ref().map_or(0, |l| l.size);
+        if k < lsize {
+            self.left.as_ref().and_then(|l| l.kth(k))
+        } else if k == lsize {
+            Some(&self.val)
+        } else {
+            self.right.as_ref().and_then(|r| r.kth(k - lsize - 1))
+        }
+    }
+
+    fn get(&self, key: usize) -> Option<&T> {
+        if self.key == key {
+            Some(&self.val)
+        } else if key < self.key {
+            self.left.as_ref().and_then(|l| l.get(key))
+        } else {
+            self.right.as_ref().and_then(|r| r.get(key))
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct XorShift64 {
     state: u64,
@@ -198,7 +351,6 @@ impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
         println!();
     }
 }
-
 
  
 
