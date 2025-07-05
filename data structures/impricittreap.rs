@@ -8,20 +8,26 @@ fn main() {
 
     println!("All sum: {}", treap.all_prod()); // 10
 
-    println!("prod(10, 20): {}", treap.prod(10, 20)); // 1 + 3 = 4
-    println!("prod(15, 30): {}", treap.prod(15, 30)); // 3 + 2 + 4 = 9
+    println!("prod(10, 20): {}", treap.prod(10, 20)); // 4 (1 + 3)
+    println!("prod(15, 30): {}", treap.prod(15, 30)); // 9 (3 + 2 + 4)
+
+    println!("Size: {}", treap.size()); // 4
+
+    println!("kth(0): {:?}", treap.kth(0)); // Some(1)
+    println!("kth(1): {:?}", treap.kth(1)); // Some(3)
+    println!("kth(2): {:?}", treap.kth(2)); // Some(2)
+    println!("kth(3): {:?}", treap.kth(3)); // Some(4)
+    println!("kth(4): {:?}", treap.kth(4)); // None
+
+    println!("get(15): {:?}", treap.get(15)); // Some(3)
+    println!("get(30): {:?}", treap.get(30)); // None
 
     treap.update(15, 10); // 3 -> 10
     println!("After update: prod(10,30): {}", treap.prod(10, 30)); // 1 + 10 + 2 + 4 = 17
-
-    // Split and Merge demo
-    let (left, right) = treap.split(20);
-    println!("Left split sum: {}", left.all_prod());  // 1 + 10 = 11
-    println!("Right split sum: {}", right.all_prod()); // 2 + 4 = 6
-
-    let merged = left.merge(right);
-    println!("Merged sum: {}", merged.all_prod()); // 17
+    println!("Size after update: {}", treap.size()); // 4
 }
+
+
 
 pub struct XorShift32 {
     state: u32,
@@ -48,30 +54,34 @@ struct Node<T: Clone + std::fmt::Debug> {
     val: T,
     sum: T,
     prio: u32,
+    size: usize,
     left: Option<Box<Node<T>>>,
     right: Option<Box<Node<T>>>,
 }
 
 impl<T: Clone + std::fmt::Debug> Node<T> {
     fn new(key: i32, val: T, prio: u32, _op: fn(&T, &T) -> T) -> Box<Self> {
-        let sum = val.clone();
         Box::new(Node {
             key,
-            val,
-            sum,
+            val: val.clone(),
+            sum: val,
             prio,
+            size: 1,
             left: None,
             right: None,
         })
     }
 
-    fn update(&mut self, op: fn(&T, &T) -> T, _e: &T) {
+    fn update(&mut self, op: fn(&T, &T) -> T, e: &T) {
         self.sum = self.val.clone();
+        self.size = 1;
         if let Some(l) = &self.left {
             self.sum = op(&l.sum, &self.sum);
+            self.size += l.size;
         }
         if let Some(r) = &self.right {
             self.sum = op(&self.sum, &r.sum);
+            self.size += r.size;
         }
     }
 
@@ -164,7 +174,6 @@ impl<T: Clone + std::fmt::Debug> Node<T> {
         }
     }
 
-    // keyで分割。key未満を左、key以上を右にする
     fn split(
         node: Option<Box<Node<T>>>,
         key: i32,
@@ -186,6 +195,27 @@ impl<T: Clone + std::fmt::Debug> Node<T> {
                     (l, Some(n))
                 }
             }
+        }
+    }
+
+    fn kth(&self, k: usize) -> Option<&T> {
+        let lsize = self.left.as_ref().map_or(0, |l| l.size);
+        if k < lsize {
+            self.left.as_ref().and_then(|l| l.kth(k))
+        } else if k == lsize {
+            Some(&self.val)
+        } else {
+            self.right.as_ref().and_then(|r| r.kth(k - lsize - 1))
+        }
+    }
+
+    fn get(&self, key: i32) -> Option<&T> {
+        if self.key == key {
+            Some(&self.val)
+        } else if key < self.key {
+            self.left.as_ref().and_then(|l| l.get(key))
+        } else {
+            self.right.as_ref().and_then(|r| r.get(key))
         }
     }
 }
@@ -236,31 +266,20 @@ impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
         self.root.as_ref().map_or(self.e.clone(), |n| n.sum.clone())
     }
 
-    pub fn split(mut self, key: i32) -> (Self, Self) {
-        let (left, right) = Node::split(self.root.take(), key, self.op, &self.e);
-        (
-            ImplicitTreap {
-                root: left,
-                rng: XorShift32::new(self.rng.state),
-                op: self.op,
-                e: self.e.clone(),
-            },
-            ImplicitTreap {
-                root: right,
-                rng: XorShift32::new(self.rng.state),
-                op: self.op,
-                e: self.e.clone(),
-            },
-        )
+    pub fn size(&self) -> usize {
+        self.root.as_ref().map_or(0, |n| n.size)
     }
 
-    pub fn merge(mut self, mut other: Self) -> Self {
-        let root = Node::merge(self.root.take(), other.root.take(), self.op, &self.e);
-        ImplicitTreap {
-            root,
-            rng: XorShift32::new(self.rng.state ^ other.rng.state),
-            op: self.op,
-            e: self.e.clone(),
+    pub fn kth(&self, k: usize) -> Option<&T> {
+        if k >= self.size() {
+            None
+        } else {
+            self.root.as_ref().and_then(|node| node.kth(k))
         }
     }
+
+    pub fn get(&self, key: i32) -> Option<&T> {
+        self.root.as_ref().and_then(|node| node.get(key))
+    }
 }
+
