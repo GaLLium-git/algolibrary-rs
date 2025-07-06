@@ -3,7 +3,7 @@ fn main() {
         a + b
     }
 
-    let mut treap = ImplicitTreap::new(op, 0);
+    let mut treap = TreapMap::new(op, 0);
 
     treap.insert(3, 10);
     treap.insert(1, 20);
@@ -19,7 +19,7 @@ fn main() {
         println!("kth({}) = {:?}", k, treap.kth(k));
     }
 
-    println!("Prod [2, 5) = {}", treap.prod(2, 5)); // 55
+    println!("Prod [2, 5) = {}", treap.prod(2, 5)); // 25
 
     treap.erase(3);
     println!("After erase key=3, all sum = {}", treap.all_prod()); // 65
@@ -29,7 +29,7 @@ fn main() {
     println!("New all sum = {}", treap.all_prod()); // 145
     
     println!("\n--- Split Test ---");
-    let mut split_test = ImplicitTreap::new(op, 0);
+    let mut split_test =TreapMap::new(op, 0);
     split_test.insert(0, 1);
     split_test.insert(1, 2);
     split_test.insert(2, 3);
@@ -239,14 +239,14 @@ impl<T: Clone + std::fmt::Debug> Node<T> {
     }
 }
 
-pub struct ImplicitTreap<T: Clone + std::fmt::Debug> {
+pub struct TreapMap<T: Clone + std::fmt::Debug> {
     root: Option<Box<Node<T>>>,
     rng: XorShift64,
     op: fn(&T, &T) -> T,
     e: T,
 }
 
-impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
+impl<T: Clone + std::fmt::Debug> TreapMap<T> {
     pub fn new(op: fn(&T, &T) -> T, e: T) -> Self {
         Self {
             root: None,
@@ -355,5 +355,4 @@ impl<T: Clone + std::fmt::Debug> ImplicitTreap<T> {
 }
 
  
-
 
