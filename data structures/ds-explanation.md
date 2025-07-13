@@ -1,4 +1,4 @@
-# ImplicitTreap メソッド説明
+# TreapMap メソッド説明
 
 ---
 
