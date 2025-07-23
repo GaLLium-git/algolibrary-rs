@@ -1,181 +1,80 @@
 fn main() {
-    let v = vec![1, 3, 7, 9, 7, 4, 1];
-    let max_pos = v.tsearch_max(|i, x| *x as i64);
-    println!("最大値の位置: {}", max_pos); // 出力: 3
+    // 整数 argmax
+    let f = |x: i64| -(x - 5) * (x - 5);
+    let x = tsearch_imax(0, 11, f); // [0, 11) → x ∈ [0,10]
+    println!("imax: x = {}, f(x) = {}", x, f(x));
 
-    let min_pos = v.tsearch_min(|i, x| *x as i64);
-    println!("最小値の位置: {}", min_pos); // 出力: 0 または 6
-
-    let peak = (1..=100).tsearch_range_max(|x| -(x - 50) * (x - 50));
-    println!("最大値のx: {}", peak); // 出力: 50
-
-    let valley = (1..=100).tsearch_range_min(|x| (x - 30) * (x - 30));
-    println!("最小値のx: {}", valley); // 出力: 30
+    // 実数 argmin
+    let g = |x: f64| (x - 2.0).powi(2) + 1.0;
+    let x = tsearch_fmin(0.0, 5.0, g, 1e-9);
+    println!("fmin: x = {:.9}, f(x) = {:.9}", x, g(x));
 }
 
-// ternary search
-pub trait TernarySearch<T> {
-    fn tsearch_max<F>(&self, f: F) -> usize
-    where
-        F: Fn(usize, &T) -> i64;
 
-    fn tsearch_min<F>(&self, f: F) -> usize
-    where
-        F: Fn(usize, &T) -> i64;
-}
-
-impl<T> TernarySearch<T> for Vec<T> {
-    fn tsearch_max<F>(&self, f: F) -> usize
-    where
-        F: Fn(usize, &T) -> i64,
-    {
-        let mut left = 0;
-        let mut right = self.len() - 1;
-        while right - left > 3 {
-            let m1 = left + (right - left) / 3;
-            let m2 = right - (right - left) / 3;
-            if f(m1, &self[m1]) < f(m2, &self[m2]) {
-                left = m1;
-            } else {
-                right = m2;
-            }
-        }
-
-        (left..=right)
-            .max_by_key(|&i| f(i, &self[i]))
-            .unwrap()
-    }
-
-    fn tsearch_min<F>(&self, f: F) -> usize
-    where
-        F: Fn(usize, &T) -> i64,
-    {
-        let mut left = 0;
-        let mut right = self.len() - 1;
-        while right - left > 3 {
-            let m1 = left + (right - left) / 3;
-            let m2 = right - (right - left) / 3;
-            if f(m1, &self[m1]) > f(m2, &self[m2]) {
-                left = m1;
-            } else {
-                right = m2;
-            }
-        }
-
-        (left..=right)
-            .min_by_key(|&i| f(i, &self[i]))
-            .unwrap()
-    }
-}
-
-// ternary search for range
-pub trait TernarySearchRange<T>
+// 整数範囲 [l, r) で最大値を取る位置を探す（argmax）
+pub fn tsearch_imax<F>(mut l: i64, mut r: i64, f: F) -> i64
 where
-    T: Copy
-        + PartialOrd
-        + std::ops::Add<Output = T>
-        + std::ops::Sub<Output = T>
-        + std::ops::Div<Output = T>
-        + From<u8>
-        + std::cmp::PartialEq,
+    F: Fn(i64) -> i64,
 {
-    fn tsearch_range_max<F>(&self, f: F) -> T
-    where
-        F: Fn(T) -> i64;
-
-    fn tsearch_range_min<F>(&self, f: F) -> T
-    where
-        F: Fn(T) -> i64;
+    while r - l > 3 {
+        let m1 = l + (r - l) / 3;
+        let m2 = r - (r - l) / 3;
+        if f(m1) < f(m2) {
+            l = m1;
+        } else {
+            r = m2;
+        }
+    }
+    (l..r).max_by_key(|&x| f(x)).unwrap()
 }
 
-impl<T, R> TernarySearchRange<T> for R
+// 整数範囲 [l, r) で最小値を取る位置を探す（argmin）
+pub fn tsearch_imin<F>(mut l: i64, mut r: i64, f: F) -> i64
 where
-    R: std::ops::RangeBounds<T>,
-    T: Copy
-        + PartialOrd
-        + std::ops::Add<Output = T>
-        + std::ops::Sub<Output = T>
-        + std::ops::Div<Output = T>
-        + From<u8>
-        + std::cmp::PartialEq,
+    F: Fn(i64) -> i64,
 {
-    fn tsearch_range_max<F>(&self, f: F) -> T
-    where
-        F: Fn(T) -> i64,
-    {
-        let mut l = match self.start_bound() {
-            std::ops::Bound::Included(x) => *x,
-            std::ops::Bound::Excluded(x) => *x + T::from(1),
-            _ => panic!("Unbounded start not supported"),
-        };
-        let mut r = match self.end_bound() {
-            std::ops::Bound::Included(x) => *x,
-            std::ops::Bound::Excluded(x) => *x - T::from(1),
-            _ => panic!("Unbounded end not supported"),
-        };
-
-        while (r - l) > T::from(3) {
-            let m1 = l + (r - l) / T::from(3);
-            let m2 = r - (r - l) / T::from(3);
-            if f(m1) < f(m2) {
-                l = m1;
-            } else {
-                r = m2;
-            }
+    while r - l > 3 {
+        let m1 = l + (r - l) / 3;
+        let m2 = r - (r - l) / 3;
+        if f(m1) > f(m2) {
+            l = m1;
+        } else {
+            r = m2;
         }
-
-        let mut best = l;
-        let mut best_val = f(l);
-        let mut cur = l + T::from(1);
-        while cur <= r {
-            let val = f(cur);
-            if val > best_val {
-                best = cur;
-                best_val = val;
-            }
-            cur = cur + T::from(1);
-        }
-
-        best
     }
+    (l..r).min_by_key(|&x| f(x)).unwrap()
+}
 
-    fn tsearch_range_min<F>(&self, f: F) -> T
-    where
-        F: Fn(T) -> i64,
-    {
-        let mut l = match self.start_bound() {
-            std::ops::Bound::Included(x) => *x,
-            std::ops::Bound::Excluded(x) => *x + T::from(1),
-            _ => panic!("Unbounded start not supported"),
-        };
-        let mut r = match self.end_bound() {
-            std::ops::Bound::Included(x) => *x,
-            std::ops::Bound::Excluded(x) => *x - T::from(1),
-            _ => panic!("Unbounded end not supported"),
-        };
-
-        while (r - l) > T::from(3) {
-            let m1 = l + (r - l) / T::from(3);
-            let m2 = r - (r - l) / T::from(3);
-            if f(m1) > f(m2) {
-                l = m1;
-            } else {
-                r = m2;
-            }
+// 実数範囲 [l, r) で最大値を取る位置を探す（argmax）
+pub fn tsearch_fmax<F>(mut l: f64, mut r: f64, f: F, eps: f64) -> f64
+where
+    F: Fn(f64) -> f64,
+{
+    while r - l > eps {
+        let m1 = l + (r - l) / 3.0;
+        let m2 = r - (r - l) / 3.0;
+        if f(m1) < f(m2) {
+            l = m1;
+        } else {
+            r = m2;
         }
-
-        let mut best = l;
-        let mut best_val = f(l);
-        let mut cur = l + T::from(1);
-        while cur <= r {
-            let val = f(cur);
-            if val < best_val {
-                best = cur;
-                best_val = val;
-            }
-            cur = cur + T::from(1);
-        }
-
-        best
     }
+    (l + r) / 2.0
+}
+
+// 実数範囲 [l, r) で最小値を取る位置を探す（argmin）
+pub fn tsearch_fmin<F>(mut l: f64, mut r: f64, f: F, eps: f64) -> f64
+where
+    F: Fn(f64) -> f64,
+{
+    while r - l > eps {
+        let m1 = l + (r - l) / 3.0;
+        let m2 = r - (r - l) / 3.0;
+        if f(m1) > f(m2) {
+            l = m1;
+        } else {
+            r = m2;
+        }
+    }
+    (l + r) / 2.0
 }
