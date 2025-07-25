@@ -2,7 +2,7 @@ fn main(){
   let v=vec![1,2,3,3,4,5];
   let pos1=v.bsearch(|x| *x>=3);
   println!("{}",pos1); //2
-  let pos2=(1..=100).bsearch_range(|x| *x>49);
+  let pos2=bsearch_irange(1,100,|x| x>49);
   println!("{}",pos2); //50
 }
  //bsearch
@@ -27,50 +27,33 @@ impl<T> BinarySearch<T> for Vec<T>{
       }  
     }
    
-  //bsearch_range
-pub trait BinarySearchRange<T>
-    where
-      T:From<u8>+PartialOrd+Copy
-          +std::ops::Add<Output=T>
-          +std::ops::Sub<Output=T>
-          +std::ops::Mul<Output=T>
-          +std::ops::Div<Output=T>,
-    {
-    fn bsearch_range<F>(&self, f: F) -> T
-    where
-        F: Fn(&T) -> bool;
-    }
 
-impl<S:std::ops::RangeBounds<T>,T> BinarySearchRange<T> for S
-    where
-      T:From<u8>+PartialOrd+Copy
-          +std::ops::Add<Output=T>
-          +std::ops::Sub<Output=T>
-          +std::ops::Mul<Output=T>
-          +std::ops::Div<Output=T>,
-    {
-    fn bsearch_range<F>(&self, f: F) -> T
-    where
-        F: Fn(&T) -> bool,
-    {
-        let mut right = match self.end_bound() {
-            std::ops::Bound::Included(right) => *right +T::from(1),
-            std::ops::Bound::Excluded(right) => *right,
-            std::ops::Bound::Unbounded => panic!("No Bounded Range in Binary Search"),
-        };
-        let mut left = match self.start_bound() {
-            std::ops::Bound::Included(left) => *left,
-            std::ops::Bound::Excluded(left) => *left + T::from(1),
-            std::ops::Bound::Unbounded => panic!("No Bounded Range in Binary Search"),
-        };
-
-        assert!(left<=right);
-        while left != right {
-            let mid = left + (right - left) / T::from(2);
-            if f(&mid) {right= mid;} 
-            else { left= mid + T::from(1);}
+pub fn bsearch_irange<F>(mut l: i64, mut r: i64, f: F) -> i64
+where
+    F: Fn(i64) -> bool,
+{
+    while l < r {
+        let m = l + (r - l) / 2;
+        if f(m) {
+            r = m;
+        } else {
+            l = m + 1;
         }
-        left
-      }
     }
+    l
+}
 
+pub fn bsearch_frange<F>(mut l: f64, mut r: f64, f: F, eps: f64) -> f64
+where
+    F: Fn(f64) -> bool,
+{
+    while r - l > eps {
+        let m = (l + r) / 2.0;
+        if f(m) {
+            r = m;
+        } else {
+            l = m;
+        }
+    }
+    l
+}
