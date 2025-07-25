@@ -72,84 +72,58 @@ impl<T> Shift2D<T> for Vec<Vec<T>>
         }
     }
 
-//bsearch
+ //bsearch
 pub trait BinarySearch<T> {
-        fn bsearch<F>(&self, f: F) -> usize
-        where
-            F: Fn(&T) -> bool;
-}
-impl<T> BinarySearch<T> for Vec<T> {
     fn bsearch<F>(&self, f: F) -> usize
-        where
-            F: Fn(&T) -> bool,
-        {
-            let mut left = 0;
-            let mut right = self.len();
-            while left != right {
-                let mid = left + (right - left) / 2;
-                if f(&self[mid]) {
-                    right = mid;
-                } else {
-                    left = mid + 1;
-                }
-            }
-            left
+    where
+        F: Fn(&T) -> bool;
+  }
+impl<T> BinarySearch<T> for Vec<T>{
+     fn bsearch<F>(&self, f: F) -> usize
+     where
+        F: Fn(&T) -> bool, 
+      {
+        let mut left =0; 
+        let mut right = self.len();
+        while left!=right {
+          let mid = left + (right - left) / 2;
+          if f(&self[mid]) {right = mid;}
+          else {left = mid+1;}
         }
- }
-
-//bsearch_range
-pub trait BinarySearchRange<T>
-    where
-        T: From<u8>
-            + PartialOrd
-            + Copy
-            + std::ops::Add<Output = T>
-            + std::ops::Sub<Output = T>
-            + std::ops::Mul<Output = T>
-            + std::ops::Div<Output = T>,
-    {
-        fn bsearch_range<F>(&self, f: F) -> T
-        where
-            F: Fn(&T) -> bool;
+        left
+      }  
     }
+   
 
-impl<S: std::ops::RangeBounds<T>, T> BinarySearchRange<T> for S
-    where
-        T: From<u8>
-            + PartialOrd
-            + Copy
-            + std::ops::Add<Output = T>
-            + std::ops::Sub<Output = T>
-            + std::ops::Mul<Output = T>
-            + std::ops::Div<Output = T>,
-    {
-        fn bsearch_range<F>(&self, f: F) -> T
-        where
-            F: Fn(&T) -> bool,
-        {
-            let mut right = match self.end_bound() {
-                std::ops::Bound::Included(right) => *right + T::from(1),
-                std::ops::Bound::Excluded(right) => *right,
-                std::ops::Bound::Unbounded => panic!("No Bounded Range in Binary Search"),
-            };
-            let mut left = match self.start_bound() {
-                std::ops::Bound::Included(left) => *left,
-                std::ops::Bound::Excluded(left) => *left + T::from(1),
-                std::ops::Bound::Unbounded => panic!("No Bounded Range in Binary Search"),
-            };
-
-            assert!(left <= right);
-            while left != right {
-                let mid = left + (right - left) / T::from(2);
-                if f(&mid) {
-                    right = mid;
-                } else {
-                    left = mid + T::from(1);
-                }
-            }
-            left
+pub fn bsearch_irange<F>(mut l: i64, mut r: i64, f: F) -> i64
+where
+    F: Fn(i64) -> bool,
+{
+    while l < r {
+        let m = l + (r - l) / 2;
+        if f(m) {
+            r = m;
+        } else {
+            l = m + 1;
         }
     }
+    l
+}
+
+pub fn bsearch_frange<F>(mut l: f64, mut r: f64, f: F, eps: f64) -> f64
+where
+    F: Fn(f64) -> bool,
+{
+    while r - l > eps {
+        let m = (l + r) / 2.0;
+        if f(m) {
+            r = m;
+        } else {
+            l = m;
+        }
+    }
+    l
+}
 
  //cumulate,cumlate_rev
 pub trait Cumulate<T> 
