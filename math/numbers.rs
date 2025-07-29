@@ -60,6 +60,26 @@ pub fn prime_factors(mut n: usize) -> Vec<usize> {
     factors
 }
 
+pub fn eratos(n: usize) -> Vec<bool> {
+    let mut is_prime = vec![true; n + 1];
+    if n >= 0 {
+        is_prime[0] = false;
+    }
+    if n >= 1 {
+        is_prime[1] = false;
+    }
+    for i in 2..=n {
+        if is_prime[i] {
+            let mut j = i * 2;
+            while j <= n {
+                is_prime[j] = false;
+                j += i;
+            }
+        }
+    }
+    is_prime
+}
+
 
 
 
