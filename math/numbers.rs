@@ -31,3 +31,35 @@ pub fn is_prime(n:usize)->bool{
     is_prime
 }
 
+pub fn divisors(n:usize)->Vec<usize>{
+    let mut divisors=vec![];
+    for i in (1..=num::integer::sqrt(n)){
+        if n%i==0{
+            divisors.push(i);
+            if !(i*i==n){
+                divisors.push(n/i);
+            }
+        }
+    }
+    divisors
+}
+
+pub fn prime_factors(mut n: usize) -> Vec<usize> {
+    let mut factors = Vec::new();
+    let mut d = 2;
+    while d * d <= n {
+        while n % d == 0 {
+            factors.push(d);
+            n /= d;
+        }
+        d += 1;
+    }
+    if n > 1 {
+        factors.push(n);
+    }
+    factors
+}
+
+
+
+
