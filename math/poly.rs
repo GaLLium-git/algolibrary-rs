@@ -1,3 +1,7 @@
+//
+// -------------------- Poly --------------------
+//
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Poly {
     pub coeffs: Vec<ModInt>,
@@ -19,7 +23,7 @@ impl Poly {
     }
 }
 
-impl Add for Poly {
+impl std::ops::Add for Poly {
     type Output = Self;
     fn add(self, rhs: Self) -> Self {
         let (a, b) = Self::resize(self.coeffs, rhs.coeffs);
@@ -28,7 +32,7 @@ impl Add for Poly {
     }
 }
 
-impl AddAssign for Poly {
+impl std::ops::AddAssign for Poly {
     fn add_assign(&mut self, rhs: Self) {
         let (mut a, b) = Self::resize(self.coeffs.clone(), rhs.coeffs);
         for (i, bi) in b.into_iter().enumerate() {
@@ -38,7 +42,7 @@ impl AddAssign for Poly {
     }
 }
 
-impl Sub for Poly {
+impl std::ops::Sub for Poly {
     type Output = Self;
     fn sub(self, rhs: Self) -> Self {
         let (a, b) = Self::resize(self.coeffs, rhs.coeffs);
@@ -47,7 +51,7 @@ impl Sub for Poly {
     }
 }
 
-impl SubAssign for Poly {
+impl std::ops::SubAssign for Poly {
     fn sub_assign(&mut self, rhs: Self) {
         let (mut a, b) = Self::resize(self.coeffs.clone(), rhs.coeffs);
         for (i, bi) in b.into_iter().enumerate() {
@@ -57,7 +61,7 @@ impl SubAssign for Poly {
     }
 }
 
-impl Mul for Poly {
+impl std::ops::Mul for Poly {
     type Output = Self;
     fn mul(self, rhs: Self) -> Self {
         let coeffs = convolution_mod(&self.coeffs, &rhs.coeffs);
@@ -65,7 +69,7 @@ impl Mul for Poly {
     }
 }
 
-impl MulAssign for Poly {
+impl std::ops::MulAssign for Poly {
     fn mul_assign(&mut self, rhs: Self) {
         let coeffs = convolution_mod(&self.coeffs, &rhs.coeffs);
         *self = Self::new(coeffs);
@@ -206,8 +210,8 @@ pub fn convolution_mod(a: &[ModInt], b: &[ModInt]) -> Vec<ModInt> {
 
     let m = ModInt::modulus() as u64;
 
-    let a_u64: Vec<u64> = a.iter().map(|x| x.val() as u64).collect();
-    let b_u64: Vec<u64> = b.iter().map(|x| x.val() as u64).collect();
+    let a_u64: Vec<u64> = a.iter().map(|x| x.val as u64).collect();
+    let b_u64: Vec<u64> = b.iter().map(|x| x.val as u64).collect();
 
     let c1 = convolution_mod_core(&a_u64, &b_u64, MOD1, ROOT1);
     let c2 = convolution_mod_core(&a_u64, &b_u64, MOD2, ROOT2);
