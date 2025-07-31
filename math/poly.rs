@@ -1,5 +1,3 @@
-use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign};
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Poly {
     pub coeffs: Vec<ModInt>,
@@ -7,18 +5,16 @@ pub struct Poly {
 
 impl Poly {
     pub fn new(mut coeffs: Vec<ModInt>) -> Self {
-        while coeffs.last().map_or(false, |c| *c == ModInt::zero()) {
+        while coeffs.last().map_or(false, |c| *c == ModInt::new(0)) {
             coeffs.pop();
         }
         Self { coeffs }
     }
 
-    fn resize(a: Vec<ModInt>, b: Vec<ModInt>) -> (Vec<ModInt>, Vec<ModInt>) {
+    fn resize(mut a: Vec<ModInt>, mut b: Vec<ModInt>) -> (Vec<ModInt>, Vec<ModInt>) {
         let n = a.len().max(b.len());
-        let mut a = a;
-        let mut b = b;
-        a.resize(n, ModInt::zero());
-        b.resize(n, ModInt::zero());
+        a.resize(n, ModInt::new(0));
+        b.resize(n, ModInt::new(0));
         (a, b)
     }
 }
@@ -63,8 +59,7 @@ impl SubAssign for Poly {
 
 impl Mul for Poly {
     type Output = Self;
-
-    fn mul(self, rhs: Self) -> Self::Output {
+    fn mul(self, rhs: Self) -> Self {
         let coeffs = convolution_mod(&self.coeffs, &rhs.coeffs);
         Self::new(coeffs)
     }
@@ -77,9 +72,10 @@ impl MulAssign for Poly {
     }
 }
 
+//
+// -------------------- NTT & Convolution --------------------
+//
 
-
-//NTT+garner
 fn modpow(mut base: u64, mut exp: u64, modulus: u64) -> u64 {
     let mut result = 1;
     base %= modulus;
@@ -113,7 +109,7 @@ fn bit_reverse(a: &mut [u64]) {
     }
 }
 
-pub fn ntt(a: &mut [u64], modp: u64, root: u64) {
+fn ntt(a: &mut [u64], modp: u64, root: u64) {
     let n = a.len();
     bit_reverse(a);
     let mut len = 2;
@@ -133,7 +129,7 @@ pub fn ntt(a: &mut [u64], modp: u64, root: u64) {
     }
 }
 
-pub fn intt(a: &mut [u64], modp: u64, root: u64) {
+fn intt(a: &mut [u64], modp: u64, root: u64) {
     let n = a.len();
     bit_reverse(a);
     let mut len = 2;
@@ -157,7 +153,7 @@ pub fn intt(a: &mut [u64], modp: u64, root: u64) {
     }
 }
 
-pub fn convolution_mod_core(a: &[u64], b: &[u64], modp: u64, root: u64) -> Vec<u64> {
+fn convolution_mod_core(a: &[u64], b: &[u64], modp: u64, root: u64) -> Vec<u64> {
     let mut n = 1;
     while n < a.len() + b.len() - 1 {
         n <<= 1;
@@ -200,19 +196,18 @@ fn garner(c1: &[u64], c2: &[u64], c3: &[u64], m1: u64, m2: u64, m3: u64, mod_fin
     result
 }
 
-
 pub fn convolution_mod(a: &[ModInt], b: &[ModInt]) -> Vec<ModInt> {
-    const MOD1: u64 = 167772161;   // 2^25 * 5 + 1
+    const MOD1: u64 = 167772161;
+    const MOD2: u64 = 469762049;
+    const MOD3: u64 = 1224736769;
     const ROOT1: u64 = 3;
-    const MOD2: u64 = 469762049;   // 2^26 * 7 + 1
     const ROOT2: u64 = 3;
-    const MOD3: u64 = 1224736769;  // 2^24 * 73 + 1
     const ROOT3: u64 = 3;
 
     let m = ModInt::modulus() as u64;
 
-    let a_u64: Vec<u64> = a.iter().map(|x| x.val as u64).collect();
-    let b_u64: Vec<u64> = b.iter().map(|x| x.val as u64).collect();
+    let a_u64: Vec<u64> = a.iter().map(|x| x.val() as u64).collect();
+    let b_u64: Vec<u64> = b.iter().map(|x| x.val() as u64).collect();
 
     let c1 = convolution_mod_core(&a_u64, &b_u64, MOD1, ROOT1);
     let c2 = convolution_mod_core(&a_u64, &b_u64, MOD2, ROOT2);
