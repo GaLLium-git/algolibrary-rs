@@ -20,9 +20,6 @@ pub struct Poly {
 
 impl Poly {
     pub fn new(mut coeffs: Vec<ModInt>) -> Self {
-        while coeffs.last().map_or(false, |c| *c == ModInt::new(0)) {
-            coeffs.pop();
-        }
         Self { coeffs }
     }
 
