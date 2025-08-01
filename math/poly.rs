@@ -1,4 +1,15 @@
-//
+fn main() {
+    ModInt::set_modulus(998244353);
+
+    let p = Poly::new(vec![ModInt::new(1),ModInt::new(2),ModInt::new(3)]); // 1 + 2x + 3x^2
+    let q = Poly::new(vec![ModInt::new(4),ModInt::new(5)]);           // 4 + 5x
+
+    println!("p*q = {:?}", (p.clone()*q.clone()).coeffs);
+    println!("p shift 3 = {:?}",p.taylorshift(ModInt::new(3)).coeffs)
+}
+
+
+// use ModInt
 // -------------------- Poly --------------------
 //
 
