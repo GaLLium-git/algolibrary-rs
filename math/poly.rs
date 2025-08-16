@@ -112,147 +112,153 @@ impl std::ops::MulAssign for Poly {
     }
 }
 
-//
-// -------------------- NTT & Convolution --------------------
-//
 
-fn modpow(mut base: u64, mut exp: u64, modulus: u64) -> u64 {
-    let mut result = 1;
-    base %= modulus;
-    while exp > 0 {
-        if exp & 1 == 1 {
-            result = result * base % modulus;
+
+
+// -------------------- Utilities --------------------
+
+fn modpow(mut a: usize, mut b: usize, m: usize) -> usize {
+    let mut res = 1;
+    a %= m;
+    while b > 0 {
+        if b % 2 == 1 {
+            res = res * a % m;
         }
-        base = base * base % modulus;
-        exp >>= 1;
+        a = a * a % m;
+        b /= 2;
     }
-    result
+    res
 }
 
-fn modinv(x: u64, modulo: u64) -> u64 {
-    modpow(x, modulo - 2, modulo)
+fn modinv(a: usize, m: usize) -> usize {
+    modpow(a, m - 2, m)
 }
 
-fn bit_reverse(a: &mut [u64]) {
-    let n = a.len();
-    let mut j = 0;
-    for i in 1..n {
-        let mut bit = n >> 1;
-        while j & bit != 0 {
-            j ^= bit;
-            bit >>= 1;
+
+// -------------------- Ntt Cache --------------------
+
+pub struct NttCache {
+    pub sum_e: Vec<usize>,
+    pub sum_ie: Vec<usize>,
+}
+
+impl NttCache {
+    pub fn new(n: usize, root: usize, modp: usize) -> Self {
+        let cnt2 = (modp - 1).trailing_zeros() as usize;
+        let mut es = vec![0; cnt2];
+        let mut ies = vec![0; cnt2];
+
+        let mut e = modpow(root, (modp - 1) >> cnt2, modp);
+        let mut ie = modinv(e, modp);
+        for i in (2..=cnt2).rev() {
+            es[i - 2] = e;
+            ies[i - 2] = ie;
+            e = e * e % modp;
+            ie = ie * ie % modp;
         }
-        j ^= bit;
-        if i < j {
-            a.swap(i, j);
+
+        let mut sum_e = vec![0; 30];
+        let mut acc = 1;
+        for (i, &v) in es.iter().enumerate() {
+            acc = acc * v % modp;
+            sum_e[i] = acc;
         }
+
+        let mut sum_ie = vec![0; 30];
+        let mut acc = 1;
+        for (i, &v) in ies.iter().enumerate() {
+            acc = acc * v % modp;
+            sum_ie[i] = acc;
+        }
+       
+
+        NttCache { sum_e, sum_ie }
     }
 }
 
-fn ntt(a: &mut [u64], modp: u64, root: u64) {
+// -------------------- NTT DIT --------------------
+
+fn ntt_dit(a: &mut [usize], modp: usize, cache: &NttCache) {
     let n = a.len();
-    bit_reverse(a);
-    let mut len = 2;
-    while len <= n {
-        let wlen = modpow(root, (modp - 1) / len as u64, modp);
-        for i in (0..n).step_by(len) {
-            let mut w = 1;
-            for j in 0..len / 2 {
-                let u = a[i + j];
-                let v = a[i + j + len / 2] * w % modp;
-                a[i + j] = (u + v) % modp;
-                a[i + j + len / 2] = (modp + u - v) % modp;
-                w = w * wlen % modp;
+    let h = n.trailing_zeros() as usize;
+
+    for ph in 1..=h {
+        let w = 1 << (ph - 1);
+        let p = 1 << (h - ph);
+        let mut now = 1;
+        for s in 0..w {
+            let offset = s << (h - ph + 1);
+            for i in 0..p {
+                let l = a[i + offset];
+                let r = a[i + offset + p] * now % modp;
+                a[i + offset] = (l + r) % modp;
+                a[i + offset + p] = (modp + l - r) % modp;
             }
+            now = now * cache.sum_e[(!s as u32).trailing_zeros() as usize] % modp;
         }
-        len <<= 1;
     }
 }
 
-fn intt(a: &mut [u64], modp: u64, root: u64) {
+fn intt_dit(a: &mut [usize], modp: usize, cache: &NttCache) {
     let n = a.len();
-    bit_reverse(a);
-    let mut len = 2;
-    while len <= n {
-        let wlen = modinv(modpow(root, (modp - 1) / len as u64, modp), modp);
-        for i in (0..n).step_by(len) {
-            let mut w = 1;
-            for j in 0..len / 2 {
-                let u = a[i + j];
-                let v = a[i + j + len / 2] * w % modp;
-                a[i + j] = (u + v) % modp;
-                a[i + j + len / 2] = (modp + u - v) % modp;
-                w = w * wlen % modp;
+    let h = n.trailing_zeros() as usize;
+
+    for ph in (1..=h).rev() {
+        let w = 1 << (ph - 1);
+        let p = 1 << (h - ph);
+        let mut inow = 1;
+        for s in 0..w {
+            let offset = s << (h - ph + 1);
+            for i in 0..p {
+                let l = a[i + offset];
+                let r = a[i + offset + p];
+                a[i + offset] = (l + r) % modp;
+                a[i + offset + p] = (modp + l - r) * inow % modp;
             }
+            inow = inow *  cache.sum_ie[(!s as u32).trailing_zeros() as usize] % modp;
         }
-        len <<= 1;
     }
-    let n_inv = modinv(n as u64, modp);
+
+    let n_inv = modinv(n, modp);
     for x in a.iter_mut() {
         *x = *x * n_inv % modp;
     }
 }
 
-fn convolution_mod_core(a: &[u64], b: &[u64], modp: u64, root: u64) -> Vec<u64> {
+// -------------------- Convolution --------------------
+
+pub fn convolution_mod(a: &[ModInt], b: &[ModInt]) -> Vec<ModInt> {
+    const MOD: usize = 998_244_353;
+    const ROOT: usize = 3;
+
     let mut n = 1;
     while n < a.len() + b.len() - 1 {
         n <<= 1;
     }
 
-    let mut fa = vec![0u64; n];
-    let mut fb = vec![0u64; n];
+    let cache = NttCache::new(n, ROOT, MOD);
+
+    let mut fa = vec![0; n];
+    let mut fb = vec![0; n];
+
     for i in 0..a.len() {
-        fa[i] = a[i] % modp;
+        fa[i] = a[i].val;
     }
     for i in 0..b.len() {
-        fb[i] = b[i] % modp;
+        fb[i] = b[i].val;
     }
 
-    ntt(&mut fa, modp, root);
-    ntt(&mut fb, modp, root);
+    ntt_dit(&mut fa, MOD, &cache);
+    ntt_dit(&mut fb, MOD, &cache);
+    
 
     for i in 0..n {
-        fa[i] = fa[i] * fb[i] % modp;
+        fa[i] = fa[i] * fb[i] % MOD;
     }
+   
 
-    intt(&mut fa, modp, root);
+    intt_dit(&mut fa, MOD, &cache);
+  
     fa.resize(a.len() + b.len() - 1, 0);
-    fa
-}
-
-fn garner(c1: &[u64], c2: &[u64], c3: &[u64], m1: u64, m2: u64, m3: u64, mod_final: u64) -> Vec<u64> {
-    let m1_inv_m2 = modinv(m1 % m2, m2);
-    let m12 = m1 as u128 * m2 as u128;
-    let m12_inv_m3 = modinv((m1 * m2) % m3, m3);
-
-    let mut result = Vec::with_capacity(c1.len());
-    for i in 0..c1.len() {
-        let x1 = c1[i];
-        let x2 = ((c2[i] + m2 - x1 % m2) * m1_inv_m2) % m2;
-        let x3 = ((c3[i] + m3 - (x1 + m1 * x2) % m3) * m12_inv_m3) % m3;
-        let x = (x1 as u128 + (m1 as u128) * (x2 as u128) + m12 * (x3 as u128)) % ((m1 as u128) * (m2 as u128) * (m3 as u128));
-        result.push((x % (mod_final as u128)) as u64);
-    }
-    result
-}
-
-pub fn convolution_mod(a: &[ModInt], b: &[ModInt]) -> Vec<ModInt> {
-    const MOD1: u64 = 167772161;
-    const MOD2: u64 = 469762049;
-    const MOD3: u64 = 1224736769;
-    const ROOT1: u64 = 3;
-    const ROOT2: u64 = 3;
-    const ROOT3: u64 = 3;
-
-    let m = ModInt::modulus() as u64;
-
-    let a_u64: Vec<u64> = a.iter().map(|x| x.val as u64).collect();
-    let b_u64: Vec<u64> = b.iter().map(|x| x.val as u64).collect();
-
-    let c1 = convolution_mod_core(&a_u64, &b_u64, MOD1, ROOT1);
-    let c2 = convolution_mod_core(&a_u64, &b_u64, MOD2, ROOT2);
-    let c3 = convolution_mod_core(&a_u64, &b_u64, MOD3, ROOT3);
-
-    let res = garner(&c1, &c2, &c3, MOD1, MOD2, MOD3, m);
-    res.into_iter().map(ModInt::new).collect()
+    fa.into_iter().map(ModInt::new).collect()
 }
