@@ -4,7 +4,7 @@ fn main() {
     let mut seg = SegmentTree::new(8, op, id);
 
     for i in 0..8 {
-        seg.update(i, i as i64); // seg = [0, 1, 2, 3, 4, 5, 6, 7]
+        seg.set(i, i as i64); // seg = [0, 1, 2, 3, 4, 5, 6, 7]
     }
 
     let val = seg.get(3);
@@ -54,7 +54,7 @@ where
         }
     }
 
-    pub fn update(&mut self, mut i: usize, value: T) {
+    pub fn set(&mut self, mut i: usize, value: T) {
         i += self.n;
         self.data[i] = value;
         while i > 1 {
