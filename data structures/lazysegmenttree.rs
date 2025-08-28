@@ -1,131 +1,128 @@
 fn main() {
     let op = |a: &i64, b: &i64| a + b;
-    let apply = |a: &i64, f: &i64| a + f;
-    let compose = |f: &i64, g: &i64| f + g;
+    let e = 0i64;
+    let mapping = |x: &i64, f: &i64, len: usize| x + f * len as i64;
+    let composition = |f: &i64, g: &i64| f + g;
+    let id = 0i64;
 
-    let id = 0i64;    // 単位元（和の単位元）
-    let id_u = 0i64;  // 遅延操作の単位元（加算なので0）
-
-    let mut seg = LazySegmentTree::new(8, op, apply, compose, id, id_u);
+    let mut seg = LazySegtree::new(8, op, e, mapping, composition, id);
 
     for i in 0..8 {
-        seg.set(i, i as i64); // seg = [0,1,2,3,4,5,6,7]
+        seg.set(i, i as i64);
     }
 
-    println!("get(3) = {}", seg.get(3));       // 3
-    println!("prod(2,6) = {}", seg.prod(2, 6)); // 2+3+4+5=14
+    println!("sum(0..8) = {}", seg.prod(0, 8)); // 28
 
-    seg.apply(2, 6, 10);  // 区間[2,6)に+10 → [0,1,12,13,14,15,6,7]
+    seg.apply_range(2, 6, 10);
 
-    println!("after apply(2,6,+10), get(3) = {}", seg.get(3));       // 13
-    println!("prod(2,6) = {}", seg.prod(2, 6));                      // 12+13+14+15=54
+    println!("sum(0..8) = {}", seg.prod(0, 8)); // 28 + 40 = 68
+    println!("get(3) = {}", seg.get(3)); // 13
 }
 
-pub struct LazySegmentTree<T, U, F, G, H>
+pub struct LazySegtree<S, F, G, H>
 where
-    F: Fn(&T, &T) -> T,
-    G: Fn(&T, &U) -> T,
-    H: Fn(&U, &U) -> U,
-    T: Clone,
-    U: Clone + PartialEq,
+    S: Clone,
+    F: Clone,
+    G: Fn(&S, &S) -> S,
+    H: Fn(&S, &F, usize) -> S, 
 {
     n: usize,
     size: usize,
-    data: Vec<T>,
-    lazy: Vec<U>,
-    op: F,
-    apply: G,
-    compose: H,
-    id: T,
-    id_u: U,
+    data: Vec<S>,
+    lazy: Vec<F>,
+    op: G,
+    e: S,
+    mapping: H,
+    composition: fn(&F, &F) -> F,
+    id: F,
 }
 
-impl<T, U, F, G, H> LazySegmentTree<T, U, F, G, H>
+impl<S, F, G, H> LazySegtree<S, F, G, H>
 where
-    F: Fn(&T, &T) -> T,
-    G: Fn(&T, &U) -> T,
-    H: Fn(&U, &U) -> U,
-    T: Clone,
-    U: Clone + PartialEq,
+    S: Clone,
+    F: Clone + std::cmp::PartialEq,
+    G: Fn(&S, &S) -> S,
+    H: Fn(&S, &F, usize) -> S,
 {
-    pub fn new(size: usize, op: F, apply: G, compose: H, id: T, id_u: U) -> Self {
+    pub fn new(size: usize, op: G, e: S, mapping: H, composition: fn(&F, &F) -> F, id: F) -> Self {
         let mut n = 1;
         while n < size {
             n <<= 1;
         }
-        Self {
+        LazySegtree {
             n,
             size,
-            data: vec![id.clone(); 2 * n],
-            lazy: vec![id_u.clone(); 2 * n],
+            data: vec![e.clone(); 2 * n],
+            lazy: vec![id.clone(); 2 * n],
             op,
-            apply,
-            compose,
+            e,
+            mapping,
+            composition,
             id,
-            id_u,
         }
     }
 
-    fn height(&self) -> usize {
-        self.n.trailing_zeros() as usize
+    fn push(&mut self, k: usize, len: usize) {
+        if self.lazy[k] != self.id {
+            let f = self.lazy[k].clone();
+            self.all_apply(k << 1, &f, len >> 1);
+            self.all_apply(k << 1 | 1, &f, len >> 1);
+            self.lazy[k] = self.id.clone();
+        }
+    }
+
+    fn all_apply(&mut self, k: usize, f: &F, len: usize) {
+        self.data[k] = (self.mapping)(&self.data[k], f, len);
+        if k < self.n {
+            self.lazy[k] = (self.composition)(f, &self.lazy[k]);
+        }
     }
 
     fn update(&mut self, k: usize) {
         self.data[k] = (self.op)(&self.data[k << 1], &self.data[k << 1 | 1]);
     }
 
-    fn all_apply(&mut self, k: usize, f: U) {
-        self.data[k] = (self.apply)(&self.data[k], &f);
-        if k < self.n {
-            self.lazy[k] = (self.compose)(&self.lazy[k], &f);
-        }
-    }
-
-    fn push(&mut self, k: usize) {
-        if self.lazy[k] != self.id_u {
-            self.all_apply(k << 1, self.lazy[k].clone());
-            self.all_apply(k << 1 | 1, self.lazy[k].clone());
-            self.lazy[k] = self.id_u.clone();
-        }
-    }
-
-    pub fn set(&mut self, mut p: usize, value: T) {
+    pub fn set(&mut self, mut p: usize, x: S) {
         p += self.n;
-        for i in (1..=self.height()).rev() {
-            self.push(p >> i);
+        for i in (1..=self.log()).rev() {
+            self.push(p >> i, 1 << i);
         }
-        self.data[p] = value;
-        for i in 1..=self.height() {
+        self.data[p] = x;
+        for i in 1..=self.log() {
             self.update(p >> i);
         }
     }
 
-    pub fn get(&mut self, mut p: usize) -> T {
+    pub fn get(&mut self, mut p: usize) -> S {
         p += self.n;
-        for i in (1..=self.height()).rev() {
-            self.push(p >> i);
+        for i in (1..=self.log()).rev() {
+            self.push(p >> i, 1 << i);
         }
         self.data[p].clone()
     }
 
-    pub fn prod(&mut self, mut l: usize, mut r: usize) -> T {
+    pub fn prod(&mut self, mut l: usize, mut r: usize) -> S {
         if l == r {
-            return self.id.clone();
+            return self.e.clone();
         }
         l += self.n;
         r += self.n;
-        for i in (1..=self.height()).rev() {
-            self.push(l >> i);
-            self.push((r - 1) >> i);
+        for i in (1..=self.log()).rev() {
+            if ((l >> i) << i) != l {
+                self.push(l >> i, 1 << i);
+            }
+            if ((r >> i) << i) != r {
+                self.push((r - 1) >> i, 1 << i);
+            }
         }
-        let mut sml = self.id.clone();
-        let mut smr = self.id.clone();
+        let mut sml = self.e.clone();
+        let mut smr = self.e.clone();
         while l < r {
-            if (l & 1) == 1 {
+            if l & 1 == 1 {
                 sml = (self.op)(&sml, &self.data[l]);
                 l += 1;
             }
-            if (r & 1) == 1 {
+            if r & 1 == 1 {
                 r -= 1;
                 smr = (self.op)(&self.data[r], &smr);
             }
@@ -135,41 +132,53 @@ where
         (self.op)(&sml, &smr)
     }
 
-    pub fn apply(&mut self, mut l: usize, mut r: usize, f: U) {
+    pub fn apply_range(&mut self, mut l: usize, mut r: usize, f: F) {
         if l == r {
             return;
         }
         l += self.n;
         r += self.n;
-
-        for i in (1..=self.height()).rev() {
-            self.push(l >> i);
-            self.push((r - 1) >> i);
-        }
-
-        let l0 = l;
-        let r0 = r;
-
-        while l < r {
-            if (l & 1) == 1 {
-                self.all_apply(l, f.clone());
-                l += 1;
+        for i in (1..=self.log()).rev() {
+            if ((l >> i) << i) != l {
+                self.push(l >> i, 1 << i);
             }
-            if (r & 1) == 1 {
-                r -= 1;
-                self.all_apply(r, f.clone());
+            if ((r >> i) << i) != r {
+                self.push((r - 1) >> i, 1 << i);
             }
-            l >>= 1;
-            r >>= 1;
         }
-
-        for i in 1..=self.height() {
-            self.update(l0 >> i);
-            self.update((r0 - 1) >> i);
+        {
+            let mut l2 = l;
+            let mut r2 = r;
+            let mut len = 1;
+            while l2 < r2 {
+                if l2 & 1 == 1 {
+                    self.all_apply(l2, &f, len);
+                    l2 += 1;
+                }
+                if r2 & 1 == 1 {
+                    r2 -= 1;
+                    self.all_apply(r2, &f, len);
+                }
+                l2 >>= 1;
+                r2 >>= 1;
+                len <<= 1;
+            }
+        }
+        for i in 1..=self.log() {
+            if ((l >> i) << i) != l {
+                self.update(l >> i);
+            }
+            if ((r >> i) << i) != r {
+                self.update((r - 1) >> i);
+            }
         }
     }
 
-    pub fn all_prod(&self) -> T {
+    pub fn all_prod(&self) -> S {
         self.data[1].clone()
+    }
+
+    fn log(&self) -> usize {
+        64 - (self.n.leading_zeros() as usize) - 1
     }
 }
