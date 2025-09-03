@@ -1,3 +1,22 @@
+fn main() {
+    init!();
+    let (N,M)=read!(usize,usize);
+    let size=N+5;
+    let id =0usize;
+    let op=|a:&usize, b:&usize| *a + *b;
+    let mapping=|a:&usize,b:&usize| (*a).max(*b);
+    let mut sq=SqrtDecomposition::new(size,id,op,mapping);
+    let mut ans=0;
+    for _ in 0..M{
+        let (t,l,r)=read!(usize,usize,usize);
+        let nts=(r-l+1)*t;
+        let lts=sq.prod(l,r+1);
+        ans+=(nts-lts);
+        sq.apply(l,r+1,t);
+    }
+    println!("{}",ans);
+}
+
 #[derive(Clone)]
 struct Block<T> {
     data: Vec<T>,
