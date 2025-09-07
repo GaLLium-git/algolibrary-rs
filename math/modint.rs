@@ -31,7 +31,7 @@ fn main() {
 //ModInt
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ModInt {
-    val: usize,
+    pub val: usize,
 }
 
 pub static MOD: std::sync::OnceLock<usize> = std::sync::OnceLock::new();
@@ -41,7 +41,7 @@ impl ModInt {
         MOD.set(modulus).unwrap_or_else(|_| panic!("Modulus can be set only once"));
     }
 
-    fn modulus() -> usize {
+    pub fn modulus() -> usize {
         *MOD.get().expect("Modulus is not set")
     }
 
@@ -72,11 +72,10 @@ impl ModInt {
             (g, y, x - (a / b) * y)
         }
     }
-
     pub fn pow(self, exp: usize) -> Self {
-        let modulus = Self::modulus();
-        let mut base = self.val;
-        let mut result = 1;
+        let modulus = Self::modulus() as u128;
+        let mut base = self.val as u128;
+        let mut result = 1u128;
         let mut exp = exp;
 
         while exp > 0 {
@@ -112,7 +111,8 @@ impl std::ops::Mul for ModInt {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self {
-        ModInt::new(self.val * rhs.val)
+        let modulus = Self::modulus() as u128;
+        ModInt::new((self.val as u128 * rhs.val as u128) % modulus)
     }
 }
 
@@ -140,8 +140,8 @@ impl std::ops::SubAssign for ModInt {
 
 impl std::ops::MulAssign for ModInt {
     fn mul_assign(&mut self, rhs: Self) {
-        let modulus = Self::modulus();
-        self.val = (self.val * rhs.val) % modulus;
+        let modulus = Self::modulus() as u128;
+        self.val = ((self.val as u128 * rhs.val as u128) % modulus) as usize;
     }
 }
 
