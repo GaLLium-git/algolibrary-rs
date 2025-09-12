@@ -22,9 +22,10 @@ fn main() {
         
         kakutei[pos]=true;
         for &(nex,cost) in graph[pos].iter(){
-            cur[nex]=cur[nex].min(cur[pos]+cost);
-            pq.push(Reverse((cur[nex],nex)));
-            
+            if cur[nex] > cur[pos]+cost{
+                cur[nex]=cur[pos]+cost;
+                pq.push(Reverse((cur[nex],nex)));
+            }            
         }
     }
     
