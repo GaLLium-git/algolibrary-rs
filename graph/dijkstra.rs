@@ -9,14 +9,13 @@ fn main() {
     }
     
     let mut kakutei=vec![false;n+1];
-    let mut cur=vec![2000000000;n+1];
+    let mut cur=vec![usize::MAX;n+1];
     let mut pq=BinaryHeap::new();
     cur[1]=0;
     pq.push(Reverse((cur[1],1)));
     
     while !(pq.is_empty()) {
-        let Reverse(mintuple)=pq.pop().unwrap();
-        let pos=mintuple.1;
+        let Reverse((_,pos))=pq.pop().unwrap();
         if kakutei[pos]==true{
             continue;
         }
