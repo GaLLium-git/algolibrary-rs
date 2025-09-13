@@ -6,32 +6,46 @@ use itertools::*;
 use ordered_float::*;
 use std::collections::*;
 
-macro_rules! init{
-    (@inner $d:tt)=>{
-        let input=std::io::read_to_string(std::io::stdin()).unwrap();
-        let mut iter=input.split_whitespace();
-        macro_rules! read{
-            ($d t:ty) => {iter.next().unwrap().parse::<$d t>().unwrap()};
-            ($d ($d t:ty),*) => {{ ($d (iter.next().unwrap().parse::<$d t>().unwrap(),)*)}};
-            ($d t:ty; $d n:expr) => {(0..$d n).map(|_|read!($d t) ).collect::<Vec<_>>()};
-            ($d ($d t:ty),*; $d n:expr) => {(0..$d n).map(|_|read!($d ($d t),*)).collect::<Vec<_>>()};
-            ($d t:ty; $d n:expr; $d m:expr) => {(0..$d m).map(|_|read!($d t; $d n)).collect::<Vec<_>>()};
-            ($d ($d t:ty),*; $d n:expr; $d m:expr) => {(0..$d m).map(|_|read!($d ($d t),*; $d n)).collect::<Vec<_>>()};
-        }
-    };
-    ()=>{init!(@inner $)};
-}
-
 fn main() {
-    init!();
-    let (a,b) = read!(usize, usize);
-    let ans = if a*b%2==0 {"Even"} else {"Odd"};
+    let mut sc=Scanner::new();
+    let a:usize=sc.next();
+    let b:usize=sc.next();
+    let ans= if a*b%2==0{"Even"} else {"Odd"};
     println!("{}",ans);
 }
 
 
-
 pub mod library {
+
+//Scanner
+pub struct Scanner {
+    buffer: std::collections::VecDeque<String>,
+}
+impl Scanner {
+    pub fn new() -> Self {
+        Scanner {
+            buffer: std::collections::VecDeque::new(),
+        }
+    }
+
+    fn read_line(&mut self) {
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).unwrap();
+        self.buffer = input
+            .split_whitespace()
+            .map(|s| s.to_string())
+            .collect();
+    }
+
+    pub fn next<T: std::str::FromStr>(&mut self) -> T {
+        loop {
+            if let Some(token) = self.buffer.pop_front() {
+                return token.parse::<T>().ok().unwrap();
+            }
+            self.read_line();
+        }
+    }
+}
 
 //Shift vec
 pub trait Shift<T>
