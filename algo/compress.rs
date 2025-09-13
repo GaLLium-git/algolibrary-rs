@@ -1,7 +1,5 @@
 fn main() {
-   init!();
-   let n=read!(usize);
-   let mut a=read!(usize;n);
+   let mut a=vec![0,0,1,1,2,2,5,5,4,4,3,3];
    let mut b=compress(&a);
    println!("{}",b.iter().join("\n"));
 }
