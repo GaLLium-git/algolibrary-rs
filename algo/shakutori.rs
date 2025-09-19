@@ -1,7 +1,6 @@
 fn main() {
-    init!();
-    let (n, k) = read!(usize, usize);
-    let mut a = read!(usize;n);
+    let (n, k) :(usize,usize)= (sc.next(),sc.next());
+    let mut a :Vec<usize> =(0..n).map(|_| sc.next()).collect();
     a.shift();
     let mut shaku=vec![0usize;n+1];
     shaku[0]=1;
