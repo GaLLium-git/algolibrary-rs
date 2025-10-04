@@ -1,6 +1,6 @@
 // unionfindに依存  
 fn main(){
-    ilet mut sc=Scanner::new();
+    let mut sc=Scanner::new();
     let (n,m):(usize,usize)=(sc.next(),sc.next());
     let (mut a,mut b,mut c)=(vec![],vec![],vec![]);
     for i in 0..m{
