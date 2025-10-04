@@ -1,9 +1,9 @@
 fn main() {
     init!();
-    let (n,m)=read!(usize,usize);
+    let (n,m):(usize,usize)=(sc.next(),sc.next());
     let mut graph=vec![vec![];n+1];
     for i in 1..=m{
-      let (a,b,c)=read!(usize,usize,usize);
+      let (a,b,c):(usize,usize,usize)=(sc.next(),sc.next(),sc.next());
       graph[a].push((b,c));
       graph[b].push((a,c));
     }
