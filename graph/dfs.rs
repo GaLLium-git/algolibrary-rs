@@ -8,11 +8,11 @@ fn dfs(v:usize,graph:&Vec<Vec<usize>>,seen:&mut Vec<bool>){
 }
   
 fn main() {
-   init!();
-   let (n,m)=read!(usize,usize);
+   let mut sc=Scanner::new();
+   let (n,m):(usize,usize)=(sc.next(),sc.next());
    let mut graph=vec![vec![];n+1];
    for i in 1..=m{
-     let (a,b)=read!(usize,usize);
+     let (a,b):(usize,usize)=(sc.next(),sc.next());
      graph[a].push(b);
      graph[b].push(a);
    }
