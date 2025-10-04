@@ -1,5 +1,5 @@
 fn main() {
-    init!();
+    let mut sc=Scanner::new();
     let (n,m):(usize,usize)=(sc.next(),sc.next());
     let mut graph=vec![vec![];n+1];
     for i in 1..=m{
